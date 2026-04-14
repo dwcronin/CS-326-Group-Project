@@ -13,12 +13,12 @@ export type EventStatus =
   | "concluded";  // past event, no edits/RSVPs allowed (Feature 3)
 
 export interface Event {
-  id: string;
+  id: string;                 // unique identifier, e.g. UUID
   title: string;
   description: string;
   location: string;
-  category: string;           //Added this as Feature 2 displays it
-  startDate: Date;
+  category: string;           // Added this as Feature 2 displays it
+  startDate: Date;            
   endDate: Date;
   capacity: number;           // maximum attendees; 0 means unlimited
   organizerId: string;        // matches User.id from the auth module
