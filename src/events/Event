@@ -20,7 +20,7 @@ export interface Event {
   category: string;           // Added this as Feature 2 displays it
   startDateTime: Date;            
   endDateTime: Date;
-  capacity: number;           // maximum attendees; 0 means unlimited
+  capacity?: number;           // maximum attendees; no limit if absent
   organizerId: string;        // matches User.id from the auth module
   status: EventStatus;        // now "draft" | "published" | "cancelled" | "past"
   createdAt: Date;
