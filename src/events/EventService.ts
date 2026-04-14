@@ -39,7 +39,7 @@ export class EventService {
     return Ok(updated);
   }
 
-  
+
   async getEventForEdit(
     actingUserId: string,
     actingUserRole: "admin" | "staff" | "user",
@@ -85,7 +85,7 @@ export class EventService {
 
     if (fields.capacity !== undefined) {
       if (!Number.isInteger(fields.capacity) || fields.capacity < 1) {
-        return { name: "InvalidCapacityError", message: "Capacity must be a positive whole number." };
+        return { name: "InvalidCapacityError", message: "Capacity must be a positive whole number, or leave blank for no limit." };
       }
     }
 
