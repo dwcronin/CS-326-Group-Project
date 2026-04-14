@@ -6,18 +6,23 @@
  * Do not change field names without coordinating with teammates (see CONTRACTS.md).
  */
 
-export type EventStatus = "active" | "cancelled" | "concluded";
+export type EventStatus =
+  | "draft"       // created but not visible to members (Feature 1, 2)
+  | "published"   // visible and active, can be RSVPed/saved (Features 2, 4, 10, 14)
+  | "cancelled"   // soft-deleted, no edits/RSVPs allowed (Features 3, 4, 14)
+  | "concluded";  // past event, no edits/RSVPs allowed (Feature 3)
 
 export interface Event {
   id: string;
   title: string;
   description: string;
   location: string;
+  category: string;           //Added this as Feature 2 displays it
   startDate: Date;
   endDate: Date;
   capacity: number;           // maximum attendees; 0 means unlimited
   organizerId: string;        // matches User.id from the auth module
-  status: EventStatus;
+  status: EventStatus;        // now "draft" | "published" | "cancelled" | "concluded"
   createdAt: Date;
   updatedAt: Date;
 }
