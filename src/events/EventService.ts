@@ -40,7 +40,28 @@ export class EventService {
   }
 
   
+  async getEventForEdit(
+    actingUserId: string,
+    actingUserRole: "admin" | "staff" | "user",
+    eventId: string
+  ): Promise<Result<Event, EventEditError>> {
+    const event = await this.repo.findById(eventId);
+    if (!event) {
+      return Err({ name: "EventNotFoundError", message: "Event not found." });
+    }
 
+    const isAdmin = actingUserRole === "admin";
+    const isOrganizer = event.organizerId === actingUserId;
+    if (!isAdmin && !isOrganizer) {
+      return Err({ name: "NotAuthorisedError", message: "You do not have permission to edit this event." });
+    }
+
+    if (event.status === "cancelled" || event.status === "past") {
+      return Err({ name: "EventNotEditableError", message: "This event cannot be edited." });
+    }
+
+    return Ok(event);
+  }
 
 
   private validateFields(fields: EventUpdateFields): EventEditError | null {
