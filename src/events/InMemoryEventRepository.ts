@@ -2,6 +2,7 @@
 
 import { Event, EventUpdateFields } from "./Event";
 
+// Module-level store — nothing outside this file touches this directly
 const store = new Map<string, Event>();
 
 export function findById(id: string): Promise<Event | null> {
@@ -25,6 +26,7 @@ export function findAll(): Promise<Event[]> {
   return Promise.resolve(Array.from(store.values()));
 }
 
+// Only used in tests — lets each test start with a clean slate
 export function _clearForTesting(): void {
   store.clear();
 }
