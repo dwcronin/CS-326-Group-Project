@@ -64,9 +64,9 @@
         </label>
         <input
           type="datetime-local"
-          id="startDateTime"
-          name="startDateTime"
-          value="<%= fields.startDateTime ?? event.startDateTime.toISOString().slice(0,16) %>"
+          id="startDatetime"
+          name="startDatetime"
+          value="<%= fields.startDatetime ?? event.startDatetime.toISOString().slice(0,16) %>"
           class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
@@ -76,9 +76,9 @@
         </label>
         <input
           type="datetime-local"
-          id="endDateTime"
-          name="endDateTime"
-          value="<%= fields.endDateTime ?? event.endDateTime.toISOString().slice(0,16) %>"
+          id="endDatetime"
+          name="endDatetime"
+          value="<%= fields.endDatetime ?? event.endDatetime.toISOString().slice(0,16) %>"
           class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
@@ -108,7 +108,7 @@
       >
         Save changes
       </button>
-      
+      <a
         href="/events/<%= event.id %>"
         class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 border border-gray-300 hover:bg-gray-50"
       >
