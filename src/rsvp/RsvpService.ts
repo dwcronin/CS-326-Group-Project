@@ -99,4 +99,18 @@ export class RsvpService {
       action: isFull ? "reactivated-waitlisted" : "reactivated-going",
     });
   }
+
+  /**
+   * getRsvpStatus — fetches the current RSVP status for a user on an event.
+   * Used to render the button state on the event detail page.
+   * Returns null if the user has no RSVP or their RSVP is cancelled.
+   */
+  async getRsvpStatus(
+    userId: string,
+    eventId: string,
+  ): Promise<"going" | "waitlisted" | null> {
+    const rsvp = await this.rsvpRepo.findByEventAndUser(eventId, userId);
+    if (!rsvp || rsvp.status === "cancelled") return null;
+    return rsvp.status;
+  }
 }
