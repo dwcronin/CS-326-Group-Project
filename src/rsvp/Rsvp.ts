@@ -18,3 +18,11 @@ export interface RsvpToggleResult {
   rsvp: Rsvp;
   action: "created-going" | "created-waitlisted" | "cancelled" | "reactivated-going" | "reactivated-waitlisted";
 }
+
+/**
+ * Named errors for Feature 4, as agreed in CONTRACTS.md.
+ */
+export type RsvpError =
+  | { name: "EventNotFoundError";     message: string }
+  | { name: "NotAuthorisedError";     message: string }
+  | { name: "EventNotRsvpableError";  message: string };
