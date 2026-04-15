@@ -5,6 +5,7 @@ import { Ok, Err, type Result } from "../lib/result.js";
 import type { RsvpToggleResult, RsvpError } from "./Rsvp.js";
 import type { RsvpRepository } from "./RsvpRepository.js";
 import type { EventRepository } from "../events/EventRepository.js";
+import type { Rsvp } from "./Rsvp.js";
 
 export class RsvpService {
   constructor(
@@ -70,7 +71,7 @@ export class RsvpService {
     // For new RSVPs and reactivations, we need to know if the event is full.
     // Count current "going" attendees only — waitlisted don't take a spot.
     const activeRsvps = await this.rsvpRepo.findActiveByEvent(eventId);
-    const goingCount = activeRsvps.filter(r => r.status === "going").length;
+    const goingCount = activeRsvps.filter((r: Rsvp) => r.status === "going").length;
     const isFull = event.capacity !== undefined && goingCount >= event.capacity;
 
     // Case 1: No existing RSVP — create a new one
