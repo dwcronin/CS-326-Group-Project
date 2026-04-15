@@ -35,13 +35,13 @@ export class RsvpService {
       return Err({
         name: "NotAuthorisedError",
         message: "Organizers and admins cannot RSVP to events.",
-      });
+      } as const);
     }
 
     // Step 2: Does the event exist?
     const event = await this.eventRepo.findById(eventId);
     if (!event) {
-      return Err({ name: "EventNotFoundError", message: "Event not found." });
+      return Err({ name: "EventNotFoundError", message: "Event not found." } as const);
     }
 
     // Step 3: Is the event in a state that allows RSVPs?
@@ -50,7 +50,7 @@ export class RsvpService {
       return Err({
         name: "EventNotRsvpableError",
         message: "This event is not accepting RSVPs.",
-      });
+      } as const);
     }
 
     // Step 4: Look up any existing RSVP for this user on this event.
@@ -62,7 +62,7 @@ export class RsvpService {
     if (existing && existing.status !== "cancelled") {
       const updated = await this.rsvpRepo.updateStatus(existing.id, "cancelled");
       if (!updated) {
-        return Err({ name: "EventNotFoundError", message: "RSVP could not be updated." });
+        return Err({ name: "EventNotFoundError", message: "RSVP could not be updated." } as const);
       }
       return Ok({ rsvp: updated, action: "cancelled" });
     }
@@ -92,7 +92,7 @@ export class RsvpService {
     const newStatus = isFull ? "waitlisted" : "going";
     const reactivated = await this.rsvpRepo.updateStatus(existing.id, newStatus);
     if (!reactivated) {
-      return Err({ name: "EventNotFoundError", message: "RSVP could not be reactivated." });
+      return Err({ name: "EventNotFoundError", message: "RSVP could not be reactivated." } as const);
     }
     return Ok({
       rsvp: reactivated,
