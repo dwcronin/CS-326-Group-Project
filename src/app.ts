@@ -253,6 +253,43 @@ class ExpressApp implements IApp {
       }),
     );
 
+    // ── Event edit routes ───────────────────────────────────────────
+
+    this.app.get(
+      "/events/:id/edit",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const session = touchAppSession(req.session as AppSessionStore);
+        await this.eventController.showEditForm(
+          res,
+          req.params.id,
+          session,
+          req.session as AppSessionStore
+        );
+      }),
+    );
+
+    this.app.post(
+      "/events/:id/edit",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const session = touchAppSession(req.session as AppSessionStore);
+        await this.eventController.updateEventFromForm(
+          res,
+          req.params.id,
+          req.body as Record<string, string>,
+          session,
+          req.session as AppSessionStore,
+        );
+      }),
+    );
+
     // ── Error handler ────────────────────────────────────────────────
 
     this.app.use((err: unknown, _req: Request, res: Response, _next: (value?: unknown) => void) => {
