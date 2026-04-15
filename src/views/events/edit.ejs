@@ -1,0 +1,120 @@
+<!-- src/views/events/edit.ejs -->
+<!-- Extends the base layout from layouts/base.ejs automatically via express-ejs-layouts -->
+
+<div class="max-w-2xl mx-auto py-8 px-4">
+    <h1 class="text-2xl font-medium text-gray-900 mb-6">Edit Event</h1>
+
+  <!-- Error banner — only shown when errors array is non-empty -->
+  <% if (errors && errors.length > 0) { %>
+    <%- include('../partials/error', { messages: errors }) %>
+  <% } %>
+
+  <form method="POST" action="/events/<%= event.id %>/edit">
+
+    <!-- Title -->
+    <div class="mb-4">
+      <label class="block text-sm font-medium text-gray-700 mb-1" for="title">
+        Title
+      </label>
+      <input
+        type="text"
+        id="title"
+        name="title"
+        maxlength="100"
+        required
+        value="<%= fields.title ?? event.title %>"
+        class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+    </div>
+
+    <!-- Description -->
+    <div class="mb-4">
+      <label class="block text-sm font-medium text-gray-700 mb-1" for="description">
+        Description
+      </label>
+      <textarea
+        id="description"
+        name="description"
+        rows="5"
+        maxlength="2000"
+        required
+        class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      ><%= fields.description ?? event.description %></textarea>
+    </div>
+
+    <!-- Location -->
+    <div class="mb-4">
+      <label class="block text-sm font-medium text-gray-700 mb-1" for="location">
+        Location
+      </label>
+      <input
+        type="text"
+        id="location"
+        name="location"
+        value="<%= fields.location ?? event.location %>"
+        class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+    </div>
+
+    <!-- Dates — side by side -->
+    <div class="mb-4 flex gap-4">
+      <div class="flex-1">
+        <label class="block text-sm font-medium text-gray-700 mb-1" for="startDatetime">
+          Start date &amp; time
+        </label>
+        <input
+          type="datetime-local"
+          id="startDatetime"
+          name="startDatetime"
+          value="<%= fields.startDatetime ?? event.startDatetime.toISOString().slice(0,16) %>"
+          class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div class="flex-1">
+        <label class="block text-sm font-medium text-gray-700 mb-1" for="endDatetime">
+          End date &amp; time
+        </label>
+        <input
+          type="datetime-local"
+          id="endDatetime"
+          name="endDatetime"
+          value="<%= fields.endDatetime ?? event.endDatetime.toISOString().slice(0,16) %>"
+          class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+    </div>
+
+    <!-- Capacity -->
+    <div class="mb-6">
+      <label class="block text-sm font-medium text-gray-700 mb-1" for="capacity">
+        Capacity <span class="text-gray-400 font-normal">(leave blank for no limit)</span>
+      </label>
+      <input
+        type="number"
+        id="capacity"
+        name="capacity"
+        min="1"
+        value="<%= fields.capacity ?? (event.capacity !== undefined ? event.capacity : '') %>"
+        placeholder="No limit"
+        class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+    </div>
+
+    <!-- Actions -->
+    <div class="flex gap-3">
+      <button
+        type="submit"
+        class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        Save changes
+      </button>
+      <a
+        href="/events/<%= event.id %>"
+        class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 border border-gray-300 hover:bg-gray-50"
+      >
+        Cancel
+      </a>
+    </div>
+
+  </form>
+</div>
