@@ -18,8 +18,8 @@ export interface Event {
   description: string;
   location: string;
   category: string;           // Added this as Feature 2 displays it
-  startDateTime: Date;            
-  endDateTime: Date;
+  startDatetime: Date;            
+  endDatetime: Date;
   capacity?: number;           // maximum attendees; no limit if absent
   organizerId: string;        // matches User.id from the auth module
   status: EventStatus;        // now "draft" | "published" | "cancelled" | "past"
