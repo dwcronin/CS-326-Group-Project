@@ -9,3 +9,12 @@ export interface Rsvp {
   status: RsvpStatus;
   createdAt: Date;
 }
+
+/**
+ * The result shape returned by a successful toggleRsvp call.
+ * Tells the caller what action was taken and what the new RSVP looks like.
+ */
+export interface RsvpToggleResult {
+  rsvp: Rsvp;
+  action: "created-going" | "created-waitlisted" | "cancelled" | "reactivated-going" | "reactivated-waitlisted";
+}
