@@ -64,9 +64,9 @@
         </label>
         <input
           type="datetime-local"
-          id="startDate"
-          name="startDate"
-          value="<%= fields.startDate ?? event.startDate.toISOString().slice(0,16) %>"
+          id="startDateTime"
+          name="startDateTime"
+          value="<%= fields.startDateTime ?? event.startDateTime.toISOString().slice(0,16) %>"
           class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
@@ -76,9 +76,9 @@
         </label>
         <input
           type="datetime-local"
-          id="endDate"
-          name="endDate"
-          value="<%= fields.endDate ?? event.endDate.toISOString().slice(0,16) %>"
+          id="endDateTime"
+          name="endDateTime"
+          value="<%= fields.endDateTime ?? event.endDateTime.toISOString().slice(0,16) %>"
           class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
@@ -93,8 +93,9 @@
         type="number"
         id="capacity"
         name="capacity"
-        min="0"
-        value="<%= fields.capacity ?? event.capacity %>"
+        min="1"
+        value="<%= fields.capacity ?? (event.capacity !== undefined ? event.capacity : '') %>"
+        placeholder="No limit"
         class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
     </div>
