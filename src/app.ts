@@ -3,6 +3,7 @@ import express, { Request, RequestHandler, Response } from "express";
 import session from "express-session";
 import Layouts from "express-ejs-layouts";
 import { IAuthController } from "./auth/AuthController";
+import type { IEventController } from "./events/EventController";
 import {
   AuthenticationRequired,
   AuthorizationRequired,
@@ -36,6 +37,7 @@ class ExpressApp implements IApp {
   constructor(
     private readonly authController: IAuthController,
     private readonly logger: ILoggingService,
+    private readonly eventController: IEventController,
   ) {
     this.app = express();
     this.registerMiddleware();
@@ -253,6 +255,43 @@ class ExpressApp implements IApp {
       }),
     );
 
+    // ── Event edit routes ───────────────────────────────────────────
+
+    this.app.get(
+      "/events/:id/edit",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const session = touchAppSession(req.session as AppSessionStore);
+        await this.eventController.showEditForm(
+          res,
+          req.params.id,
+          session,
+          req.session as AppSessionStore
+        );
+      }),
+    );
+
+    this.app.post(
+      "/events/:id/edit",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const session = touchAppSession(req.session as AppSessionStore);
+        await this.eventController.updateEventFromForm(
+          res,
+          req.params.id,
+          req.body as Record<string, string>,
+          session,
+          req.session as AppSessionStore,
+        );
+      }),
+    );
+
     // ── Error handler ────────────────────────────────────────────────
 
     this.app.use((err: unknown, _req: Request, res: Response, _next: (value?: unknown) => void) => {
@@ -273,6 +312,7 @@ class ExpressApp implements IApp {
 export function CreateApp(
   authController: IAuthController,
   logger: ILoggingService,
+  eventController: IEventController,
 ): IApp {
-  return new ExpressApp(authController, logger);
+  return new ExpressApp(authController, logger, eventController);
 }
