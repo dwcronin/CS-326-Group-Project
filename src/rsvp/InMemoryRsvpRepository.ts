@@ -28,3 +28,24 @@ export function findActiveByEvent(eventId: string): Promise<Rsvp[]> {
     .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
   return Promise.resolve(active);
 }
+
+export function save(rsvp: Rsvp): Promise<Rsvp> {
+  store.set(rsvp.id, rsvp);
+  return Promise.resolve(rsvp);
+}
+
+export function updateStatus(
+  id: string,
+  status: RsvpStatus,
+): Promise<Rsvp | null> {
+  const existing = store.get(id);
+  if (!existing) return Promise.resolve(null);
+  const updated: Rsvp = { ...existing, status };
+  store.set(id, updated);
+  return Promise.resolve(updated);
+}
+
+// Only used in tests — lets each test start with a clean slate
+export function _clearForTesting(): void {
+  store.clear();
+}
