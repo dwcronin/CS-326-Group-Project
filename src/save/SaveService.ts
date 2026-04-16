@@ -89,17 +89,17 @@ export class SaveService {
 
     const savedRecords = await this.saveRepo.findAllByUser(userId);
 
-    const hydrated: SavedEventWithEvent[] = [];
-    for (const record of savedRecords) {
-      const event = await this.eventRepo.findById(record.eventId);
-      if (event) {
-        hydrated.push({ savedRecord: record, event });
-      }
-    }
-
-    hydrated.sort(
-      (a, b) => b.savedRecord.createdAt.getTime() - a.savedRecord.createdAt.getTime(),
+    const pairs = await Promise.all(
+      savedRecords.map(async (record) => ({
+        record,
+        event: await this.eventRepo.findById(record.eventId),
+      })),
     );
+
+    const hydrated: SavedEventWithEvent[] = pairs
+      .filter((p): p is { record: SavedEvent; event: Event } => p.event !== null)
+      .map((p) => ({ savedRecord: p.record, event: p.event }))
+      .sort((a, b) => b.savedRecord.createdAt.getTime() - a.savedRecord.createdAt.getTime());
 
     return Ok(hydrated);
   }
