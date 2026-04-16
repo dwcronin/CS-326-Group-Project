@@ -77,8 +77,8 @@ export class EventService {
       if (d.length > 2000) return { name: "InvalidDescriptionError", message: "Description must be 2000 characters or fewer." };
     }
 
-    if (fields.startDateTime !== undefined && fields.endDateTime !== undefined) {
-      if (fields.endDateTime <= fields.startDateTime) {
+    if (fields.startDatetime !== undefined && fields.endDatetime !== undefined) {
+      if (fields.endDatetime <= fields.startDatetime) {
         return { name: "InvalidDateError", message: "End date must be after start date." };
       }
     }
