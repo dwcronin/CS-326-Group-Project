@@ -3,7 +3,8 @@ import express, { Request, RequestHandler, Response } from "express";
 import session from "express-session";
 import Layouts from "express-ejs-layouts";
 import { IAuthController } from "./auth/AuthController";
-import type { IEventController } from "./events/EventController";
+import type { IEventController } from "./events/EventController"; //event edit controller
+import type { IRsvpController } from "./rsvp/RsvpController";  // RSVP controller
 import {
   AuthenticationRequired,
   AuthorizationRequired,
@@ -18,6 +19,7 @@ import {
   touchAppSession,
 } from "./session/AppSession";
 import { ILoggingService } from "./service/LoggingService";
+
 
 type AsyncRequestHandler = RequestHandler;
 
@@ -38,6 +40,7 @@ class ExpressApp implements IApp {
     private readonly authController: IAuthController,
     private readonly logger: ILoggingService,
     private readonly eventController: IEventController,
+    private readonly rsvpController: IRsvpController,
   ) {
     this.app = express();
     this.registerMiddleware();
@@ -267,7 +270,7 @@ class ExpressApp implements IApp {
         const session = touchAppSession(req.session as AppSessionStore);
         await this.eventController.showEditForm(
           res,
-          req.params.id,
+          String(req.params.id),
           session,
           req.session as AppSessionStore
         );
@@ -284,8 +287,28 @@ class ExpressApp implements IApp {
         const session = touchAppSession(req.session as AppSessionStore);
         await this.eventController.updateEventFromForm(
           res,
-          req.params.id,
+          String(req.params.id),
           req.body as Record<string, string>,
+          session,
+          req.session as AppSessionStore,
+        );
+      }),
+    );
+
+
+    // ── RSVP routes ─────────────────────────────────────────────────
+
+    this.app.post(
+      "/events/:id/rsvp",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const session = touchAppSession(req.session as AppSessionStore);
+        await this.rsvpController.toggleRsvp(
+          res,
+          String(req.params.id),
           session,
           req.session as AppSessionStore,
         );
@@ -313,6 +336,7 @@ export function CreateApp(
   authController: IAuthController,
   logger: ILoggingService,
   eventController: IEventController,
+  rsvpController: IRsvpController,
 ): IApp {
-  return new ExpressApp(authController, logger, eventController);
+  return new ExpressApp(authController, logger, eventController, rsvpController);
 }

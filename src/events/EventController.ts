@@ -49,9 +49,9 @@ class EventController implements IEventController {
     }
 
     if (user.role === "user") {
-      res.status(403).render("error", {
+      res.status(403).render("partials/error", {
         message: "You do not have permission to edit events.",
-        session,
+        layout: false,
       });
       return;
     }
@@ -63,9 +63,9 @@ class EventController implements IEventController {
     );
 
     if (result.ok === false) {
-      res.status(this.mapErrorStatus(result.value)).render("error", {
+      res.status(this.mapErrorStatus(result.value)).render("partials/error", {
         message: result.value.message,
-        session,
+        layout: false,
       });
       return;
     }
@@ -93,9 +93,9 @@ class EventController implements IEventController {
     }
 
     if (user.role === "user") {
-      res.status(403).render("error", {
+      res.status(403).render("partials/error", {
         message: "You do not have permission to edit events.",
-        session,
+        layout: false,
       });
       return;
     }
@@ -134,9 +134,9 @@ class EventController implements IEventController {
           user.userId, user.role, eventId,
         );
         if (eventResult.ok === false) {
-          res.status(this.mapErrorStatus(eventResult.value)).render("error", {
+          res.status(this.mapErrorStatus(eventResult.value)).render("partials/error", {
             message: eventResult.value.message,
-            session,
+            layout: false,
           });
           return;
         }
@@ -149,9 +149,9 @@ class EventController implements IEventController {
         return;
       }
 
-      res.status(this.mapErrorStatus(result.value)).render("error", {
+      res.status(this.mapErrorStatus(result.value)).render("partials/error", {
         message: result.value.message,
-        session,
+        layout: false,
       });
       return;
     }
