@@ -117,4 +117,42 @@
     </div>
 
   </form>
+
+  <div class="mt-8 rounded-xl border border-gray-200 bg-white p-5">
+    <h2 class="text-lg font-medium text-gray-900">Event lifecycle</h2>
+    <p class="mt-1 text-sm text-gray-600">Current status: <span class="font-medium"><%= event.status %></span></p>
+
+    <div class="mt-4 flex flex-wrap gap-3">
+      <% if (event.status === "draft") { %>
+        <form method="POST" action="/events/<%= event.id %>/status">
+          <input type="hidden" name="status" value="published" />
+          <button
+            type="submit"
+            class="bg-emerald-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-emerald-700"
+          >
+            Publish event
+          </button>
+        </form>
+      <% } %>
+
+      <% if (event.status === "published") { %>
+        <form method="POST" action="/events/<%= event.id %>/status">
+          <input type="hidden" name="status" value="cancelled" />
+          <button
+            type="submit"
+            class="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700"
+          >
+            Cancel event
+          </button>
+        </form>
+      <% } %>
+
+      <a
+        href="/events/<%= event.id %>/attendees"
+        class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 border border-gray-300 hover:bg-gray-50"
+      >
+        View attendee list
+      </a>
+    </div>
+  </div>
 </div>
