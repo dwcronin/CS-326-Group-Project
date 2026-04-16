@@ -5,6 +5,7 @@ import { CreateInMemoryUserRepository } from "./auth/InMemoryUserRepository";
 import { CreatePasswordHasher } from "./auth/PasswordHasher";
 import { CreateApp } from "./app";
 import type { IApp } from "./contracts";
+import { seed } from "./seed.js";
 import { CreateLoggingService } from "./service/LoggingService";
 import type { ILoggingService } from "./service/LoggingService";
 
@@ -16,8 +17,14 @@ import * as RsvpRepo from "./rsvp/InMemoryRsvpRepository.js";
 import { RsvpService } from "./rsvp/RsvpService.js";
 import { CreateRsvpController } from "./rsvp/RsvpController.js";
 
+import * as SaveRepo from "./save/InMemorySaveRepository.js";
+import { SaveService } from "./save/SaveService.js";
+import { CreateSaveController } from "./save/SaveController.js";
+
 export function createComposedApp(logger?: ILoggingService): IApp {
   const resolvedLogger = logger ?? CreateLoggingService();
+
+  if (process.env.NODE_ENV !== "test") seed();
 
   // Authentication & authorization wiring
   const authUsers = CreateInMemoryUserRepository();
@@ -36,5 +43,8 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const rsvpService = new RsvpService(RsvpRepo, EventRepo);
   const rsvpController = CreateRsvpController(rsvpService);
 
-  return CreateApp(authController, resolvedLogger, eventController, rsvpController);
+  const saveService = new SaveService(SaveRepo, EventRepo);
+  const saveController = CreateSaveController(saveService);
+
+  return CreateApp(authController, resolvedLogger, eventController, rsvpController, saveController);
 }
