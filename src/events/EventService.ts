@@ -1,5 +1,13 @@
 import { Ok, Err, type Result } from "../lib/result.js";
-import { Event, EventUpdateFields, EventEditError } from "./Event";
+import {
+  Event,
+  EventUpdateFields,
+  EventEditError,
+  EventStatus,
+  EventStatusChangeError,
+  EventAttendeeSummary,
+  EventAttendeeListError,
+} from "./Event";
 import { EventRepository } from "./EventRepository";
 
 export class EventService {
@@ -15,17 +23,17 @@ export class EventService {
 
     const event = await this.repo.findById(eventId);
     if (!event) {
-      return Err({ name: "EventNotFoundError", message: "Event not found." } as const);
+      return Err({ name: "EventNotFoundError", message: "Event not found." });
     }
 
     const isAdmin = actingUserRole === "admin";
     const isOrganizer = event.organizerId === actingUserId;
     if (!isAdmin && !isOrganizer) {
-      return Err({ name: "NotAuthorisedError", message: "You do not have permission to edit this event." } as const);
+      return Err({ name: "NotAuthorisedError", message: "You do not have permission to edit this event." });
     }
 
     if (event.status === "cancelled" || event.status === "past") {
-      return Err({ name: "EventNotEditableError", message: "This event has been cancelled or has already concluded and cannot be edited." } as const);
+      return Err({ name: "EventNotEditableError", message: "This event has been cancelled or has already concluded and cannot be edited." });
     }
 
     const validationError = this.validateFields(fields);
@@ -33,7 +41,7 @@ export class EventService {
 
     const updated = await this.repo.update(eventId, fields);
     if (!updated) {
-      return Err({ name: "EventNotFoundError", message: "Event could not be updated." } as const);
+      return Err({ name: "EventNotFoundError", message: "Event could not be updated." });
     }
 
     return Ok(updated);
@@ -47,17 +55,17 @@ export class EventService {
   ): Promise<Result<Event, EventEditError>> {
     const event = await this.repo.findById(eventId);
     if (!event) {
-      return Err({ name: "EventNotFoundError", message: "Event not found." } as const);
+      return Err({ name: "EventNotFoundError", message: "Event not found." });
     }
 
     const isAdmin = actingUserRole === "admin";
     const isOrganizer = event.organizerId === actingUserId;
     if (!isAdmin && !isOrganizer) {
-      return Err({ name: "NotAuthorisedError", message: "You do not have permission to edit this event." } as const);
+      return Err({ name: "NotAuthorisedError", message: "You do not have permission to edit this event." });
     }
 
     if (event.status === "cancelled" || event.status === "past") {
-      return Err({ name: "EventNotEditableError", message: "This event cannot be edited." } as const);
+      return Err({ name: "EventNotEditableError", message: "This event cannot be edited." });
     }
 
     return Ok(event);
@@ -77,8 +85,8 @@ export class EventService {
       if (d.length > 2000) return { name: "InvalidDescriptionError", message: "Description must be 2000 characters or fewer." };
     }
 
-    if (fields.startDateTime !== undefined && fields.endDateTime !== undefined) {
-      if (fields.endDateTime <= fields.startDateTime) {
+    if (fields.startDatetime !== undefined && fields.endDatetime !== undefined) {
+      if (fields.endDatetime <= fields.startDatetime) {
         return { name: "InvalidDateError", message: "End date must be after start date." };
       }
     }
@@ -90,5 +98,58 @@ export class EventService {
     }
 
     return null;
+  }
+  async changeEventStatus(
+    actingUserId: string,
+    actingUserRole: "admin" | "staff" | "user",
+    eventId: string,
+    nextStatus: EventStatus
+  ): Promise<Result<Event, EventStatusChangeError>> {
+    const event = await this.repo.findById(eventId);
+    if (!event) return Err({ name: "EventNotFoundError", message: "Event not found." });
+
+    const isAdmin = actingUserRole === "admin";
+    const isOrganizer = event.organizerId === actingUserId;
+    if (!isAdmin && !isOrganizer) {
+      return Err({ name: "NotAuthorisedError", message: "Not authorized to change status." });
+    }
+
+    const validTransition =
+      (event.status === "draft" && nextStatus === "published") ||
+      (event.status === "published" && nextStatus === "cancelled");
+
+    if (!validTransition) {
+      return Err({ name: "InvalidEventStatusError", message: "Invalid status transition." });
+    }
+
+    const updated = await this.repo.updateStatus(eventId, nextStatus);
+    if (!updated) return Err({ name: "EventNotFoundError", message: "Update failed." });
+
+    return Ok(updated);
+  }
+
+  async listEventAttendees(
+    actingUserId: string,
+    actingUserRole: "admin" | "staff" | "user",
+    eventId: string
+  ): Promise<Result<EventAttendeeSummary[], EventAttendeeListError>> {
+    const event = await this.repo.findById(eventId);
+    if (!event) return Err({ name: "EventNotFoundError", message: "Event not found." });
+
+    if (actingUserRole !== "admin" && event.organizerId !== actingUserId) {
+      return Err({ name: "NotAuthorisedError", message: "Access denied." });
+    }
+
+    const attendees = await this.repo.listAttendees(eventId);
+
+    // Show "going" attendees first, then order each group by RSVP time.
+    const sorted = [...attendees].sort((a, b) => {
+      if (a.rsvpStatus !== b.rsvpStatus) {
+        return a.rsvpStatus === "going" ? -1 : 1;
+      }
+      return a.rsvpCreatedAt.getTime() - b.rsvpCreatedAt.getTime();
+    });
+
+    return Ok(sorted);
   }
 }
