@@ -44,9 +44,9 @@ class RsvpController implements IRsvpController {
     );
 
     if (result.ok === false) {
-      res.status(this.mapErrorStatus(result.value)).render("error", {
+      res.status(this.mapErrorStatus(result.value)).render("partials/error", {
         message: result.value.message,
-        session,
+        layout: false,
       });
       return;
     }
