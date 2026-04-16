@@ -41,7 +41,7 @@ export class SearchService {
     const lowerTokens = query.map((t) => t.toLowerCase());
 
     const matched = upcoming.filter((e) => {
-      const haystack = [e.title, e.description, e.location]
+      const haystack = [e.title, e.description, e.location, e.category]
         .join(" ")
         .toLowerCase();
       return lowerTokens.every((token) => haystack.includes(token));
