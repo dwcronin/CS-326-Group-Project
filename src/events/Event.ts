@@ -52,3 +52,21 @@ export type EventEditError =
   | { name: "InvalidDescriptionError"; message: string }
   | { name: "InvalidDateError";      message: string }
   | { name: "InvalidCapacityError";  message: string };
+
+export interface EventAttendeeSummary {
+  userId: string;
+  email: string;
+  displayName: string;
+  rsvpId: string;
+  rsvpStatus: "going" | "waitlisted";
+  rsvpCreatedAt: Date;
+}
+
+export type EventStatusChangeError =
+  | { name: "EventNotFoundError"; message: string }
+  | { name: "NotAuthorisedError"; message: string }
+  | { name: "InvalidEventStatusError"; message: string };
+
+export type EventAttendeeListError =
+  | { name: "EventNotFoundError"; message: string }
+  | { name: "NotAuthorisedError"; message: string };
