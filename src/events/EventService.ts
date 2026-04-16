@@ -15,17 +15,17 @@ export class EventService {
 
     const event = await this.repo.findById(eventId);
     if (!event) {
-      return Err({ name: "EventNotFoundError", message: "Event not found." });
+      return Err({ name: "EventNotFoundError", message: "Event not found." } as const);
     }
 
     const isAdmin = actingUserRole === "admin";
     const isOrganizer = event.organizerId === actingUserId;
     if (!isAdmin && !isOrganizer) {
-      return Err({ name: "NotAuthorisedError", message: "You do not have permission to edit this event." });
+      return Err({ name: "NotAuthorisedError", message: "You do not have permission to edit this event." } as const);
     }
 
     if (event.status === "cancelled" || event.status === "past") {
-      return Err({ name: "EventNotEditableError", message: "This event has been cancelled or has already concluded and cannot be edited." });
+      return Err({ name: "EventNotEditableError", message: "This event has been cancelled or has already concluded and cannot be edited." } as const);
     }
 
     const validationError = this.validateFields(fields);
@@ -33,7 +33,7 @@ export class EventService {
 
     const updated = await this.repo.update(eventId, fields);
     if (!updated) {
-      return Err({ name: "EventNotFoundError", message: "Event could not be updated." });
+      return Err({ name: "EventNotFoundError", message: "Event could not be updated." } as const);
     }
 
     return Ok(updated);
@@ -47,17 +47,17 @@ export class EventService {
   ): Promise<Result<Event, EventEditError>> {
     const event = await this.repo.findById(eventId);
     if (!event) {
-      return Err({ name: "EventNotFoundError", message: "Event not found." });
+      return Err({ name: "EventNotFoundError", message: "Event not found." } as const);
     }
 
     const isAdmin = actingUserRole === "admin";
     const isOrganizer = event.organizerId === actingUserId;
     if (!isAdmin && !isOrganizer) {
-      return Err({ name: "NotAuthorisedError", message: "You do not have permission to edit this event." });
+      return Err({ name: "NotAuthorisedError", message: "You do not have permission to edit this event." } as const);
     }
 
     if (event.status === "cancelled" || event.status === "past") {
-      return Err({ name: "EventNotEditableError", message: "This event cannot be edited." });
+      return Err({ name: "EventNotEditableError", message: "This event cannot be edited." } as const);
     }
 
     return Ok(event);
