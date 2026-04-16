@@ -3,6 +3,10 @@ import express, { Request, RequestHandler, Response } from "express";
 import session from "express-session";
 import Layouts from "express-ejs-layouts";
 import { IAuthController } from "./auth/AuthController";
+import type { IEventController } from "./events/EventController"; //event edit controller
+import type { IRsvpController } from "./rsvp/RsvpController";  // RSVP controller
+import type { ISaveController } from "./save/SaveController";  // Save for Later controller
+import type { ISearchController } from "./search/SearchController";  // Event Search controller
 import {
   AuthenticationRequired,
   AuthorizationRequired,
@@ -17,6 +21,7 @@ import {
   touchAppSession,
 } from "./session/AppSession";
 import { ILoggingService } from "./service/LoggingService";
+
 
 type AsyncRequestHandler = RequestHandler;
 
@@ -36,6 +41,10 @@ class ExpressApp implements IApp {
   constructor(
     private readonly authController: IAuthController,
     private readonly logger: ILoggingService,
+    private readonly eventController: IEventController,
+    private readonly rsvpController: IRsvpController,
+    private readonly saveController: ISaveController,
+    private readonly searchController: ISearchController,
   ) {
     this.app = express();
     this.registerMiddleware();
@@ -253,6 +262,104 @@ class ExpressApp implements IApp {
       }),
     );
 
+    // ── Event edit routes ───────────────────────────────────────────
+
+    this.app.get(
+      "/events/:id/edit",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const session = touchAppSession(req.session as AppSessionStore);
+        await this.eventController.showEditForm(
+          res,
+          String(req.params.id),
+          session,
+          req.session as AppSessionStore
+        );
+      }),
+    );
+
+    this.app.post(
+      "/events/:id/edit",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const session = touchAppSession(req.session as AppSessionStore);
+        await this.eventController.updateEventFromForm(
+          res,
+          String(req.params.id),
+          req.body as Record<string, string>,
+          session,
+          req.session as AppSessionStore,
+        );
+      }),
+    );
+
+
+    // ── Event Search route ───────────────────────────────────────────
+
+    this.app.get(
+      "/events",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const session = touchAppSession(req.session as AppSessionStore);
+        const rawQuery = typeof req.query.q === "string" ? req.query.q : "";
+        const user = session.authenticatedUser;
+        const savedIds = user?.role === "user"
+          ? await this.saveController.getSavedEventIds(user.userId)
+          : [];
+        await this.searchController.showEventList(res, rawQuery, session, savedIds);
+      }),
+    );
+
+    // ── Save for Later routes ────────────────────────────────────────
+
+    this.app.post(
+      "/events/:id/save",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const session = touchAppSession(req.session as AppSessionStore);
+        await this.saveController.toggleSaveEvent(
+          res,
+          String(req.params.id),
+          session,
+          req.session as AppSessionStore,
+        );
+      }),
+    );
+
+    this.app.get(
+      "/saved-events",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const session = touchAppSession(req.session as AppSessionStore);
+        await this.saveController.showSavedList(res, session);
+      }),
+    );
+
+    // ── RSVP routes ─────────────────────────────────────────────────
+
+    this.app.post(
+      "/events/:id/rsvp",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const session = touchAppSession(req.session as AppSessionStore);
+        await this.rsvpController.toggleRsvp(
+          res,
+          String(req.params.id),
+          session,
+          req.session as AppSessionStore,
+        );
+      }),
+    );
+
     // ── Error handler ────────────────────────────────────────────────
 
     this.app.use((err: unknown, _req: Request, res: Response, _next: (value?: unknown) => void) => {
@@ -273,6 +380,10 @@ class ExpressApp implements IApp {
 export function CreateApp(
   authController: IAuthController,
   logger: ILoggingService,
+  eventController: IEventController,
+  rsvpController: IRsvpController,
+  saveController: ISaveController,
+  searchController: ISearchController,
 ): IApp {
-  return new ExpressApp(authController, logger);
+  return new ExpressApp(authController, logger, eventController, rsvpController, saveController, searchController);
 }
