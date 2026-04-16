@@ -1,5 +1,13 @@
 import { Ok, Err, type Result } from "../lib/result.js";
-import { Event, EventUpdateFields, EventEditError } from "./Event";
+import {
+  Event,
+  EventUpdateFields,
+  EventEditError,
+  EventStatus,
+  EventStatusChangeError,
+  EventAttendeeSummary,
+  EventAttendeeListError,
+} from "./Event";
 import { EventRepository } from "./EventRepository";
 
 export class EventService {
@@ -90,5 +98,58 @@ export class EventService {
     }
 
     return null;
+  }
+  async changeEventStatus(
+    actingUserId: string,
+    actingUserRole: "admin" | "staff" | "user",
+    eventId: string,
+    nextStatus: EventStatus
+  ): Promise<Result<Event, EventStatusChangeError>> {
+    const event = await this.repo.findById(eventId);
+    if (!event) return Err({ name: "EventNotFoundError", message: "Event not found." });
+
+    const isAdmin = actingUserRole === "admin";
+    const isOrganizer = event.organizerId === actingUserId;
+    if (!isAdmin && !isOrganizer) {
+      return Err({ name: "NotAuthorisedError", message: "Not authorized to change status." });
+    }
+
+    const validTransition =
+      (event.status === "draft" && nextStatus === "published") ||
+      (event.status === "published" && nextStatus === "cancelled");
+
+    if (!validTransition) {
+      return Err({ name: "InvalidEventStatusError", message: "Invalid status transition." });
+    }
+
+    const updated = await this.repo.updateStatus(eventId, nextStatus);
+    if (!updated) return Err({ name: "EventNotFoundError", message: "Update failed." });
+
+    return Ok(updated);
+  }
+
+  async listEventAttendees(
+    actingUserId: string,
+    actingUserRole: "admin" | "staff" | "user",
+    eventId: string
+  ): Promise<Result<EventAttendeeSummary[], EventAttendeeListError>> {
+    const event = await this.repo.findById(eventId);
+    if (!event) return Err({ name: "EventNotFoundError", message: "Event not found." });
+
+    if (actingUserRole !== "admin" && event.organizerId !== actingUserId) {
+      return Err({ name: "NotAuthorisedError", message: "Access denied." });
+    }
+
+    const attendees = await this.repo.listAttendees(eventId);
+
+    // Show "going" attendees first, then order each group by RSVP time.
+    const sorted = [...attendees].sort((a, b) => {
+      if (a.rsvpStatus !== b.rsvpStatus) {
+        return a.rsvpStatus === "going" ? -1 : 1;
+      }
+      return a.rsvpCreatedAt.getTime() - b.rsvpCreatedAt.getTime();
+    });
+
+    return Ok(sorted);
   }
 }
