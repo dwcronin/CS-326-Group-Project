@@ -5,6 +5,7 @@ import Layouts from "express-ejs-layouts";
 import { IAuthController } from "./auth/AuthController";
 import type { IEventController } from "./events/EventController"; //event edit controller
 import type { IRsvpController } from "./rsvp/RsvpController";  // RSVP controller
+import type { ISaveController } from "./save/SaveController";  // Save for Later controller
 import {
   AuthenticationRequired,
   AuthorizationRequired,
@@ -41,6 +42,7 @@ class ExpressApp implements IApp {
     private readonly logger: ILoggingService,
     private readonly eventController: IEventController,
     private readonly rsvpController: IRsvpController,
+    private readonly saveController: ISaveController,
   ) {
     this.app = express();
     this.registerMiddleware();
@@ -296,6 +298,31 @@ class ExpressApp implements IApp {
     );
 
 
+    // ── Save for Later routes ────────────────────────────────────────
+
+    this.app.post(
+      "/events/:id/save",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const session = touchAppSession(req.session as AppSessionStore);
+        await this.saveController.toggleSaveEvent(
+          res,
+          String(req.params.id),
+          session,
+          req.session as AppSessionStore,
+        );
+      }),
+    );
+
+    this.app.get(
+      "/saved-events",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const session = touchAppSession(req.session as AppSessionStore);
+        await this.saveController.showSavedList(res, session);
+      }),
+    );
+
     // ── RSVP routes ─────────────────────────────────────────────────
 
     this.app.post(
@@ -337,6 +364,7 @@ export function CreateApp(
   logger: ILoggingService,
   eventController: IEventController,
   rsvpController: IRsvpController,
+  saveController: ISaveController,
 ): IApp {
-  return new ExpressApp(authController, logger, eventController, rsvpController);
+  return new ExpressApp(authController, logger, eventController, rsvpController, saveController);
 }

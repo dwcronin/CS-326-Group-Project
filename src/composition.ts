@@ -16,6 +16,10 @@ import * as RsvpRepo from "./rsvp/InMemoryRsvpRepository.js";
 import { RsvpService } from "./rsvp/RsvpService.js";
 import { CreateRsvpController } from "./rsvp/RsvpController.js";
 
+import * as SaveRepo from "./save/InMemorySaveRepository.js";
+import { SaveService } from "./save/SaveService.js";
+import { CreateSaveController } from "./save/SaveController.js";
+
 export function createComposedApp(logger?: ILoggingService): IApp {
   const resolvedLogger = logger ?? CreateLoggingService();
 
@@ -36,5 +40,8 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const rsvpService = new RsvpService(RsvpRepo, EventRepo);
   const rsvpController = CreateRsvpController(rsvpService);
 
-  return CreateApp(authController, resolvedLogger, eventController, rsvpController);
+  const saveService = new SaveService(SaveRepo, EventRepo);
+  const saveController = CreateSaveController(saveService);
+
+  return CreateApp(authController, resolvedLogger, eventController, rsvpController, saveController);
 }
