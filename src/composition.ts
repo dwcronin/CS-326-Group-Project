@@ -21,6 +21,9 @@ import * as SaveRepo from "./save/InMemorySaveRepository.js";
 import { SaveService } from "./save/SaveService.js";
 import { CreateSaveController } from "./save/SaveController.js";
 
+import { SearchService } from "./search/SearchService.js";
+import { CreateSearchController } from "./search/SearchController.js";
+
 export function createComposedApp(logger?: ILoggingService): IApp {
   const resolvedLogger = logger ?? CreateLoggingService();
 
@@ -46,5 +49,9 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const saveService = new SaveService(SaveRepo, EventRepo);
   const saveController = CreateSaveController(saveService);
 
-  return CreateApp(authController, resolvedLogger, eventController, rsvpController, saveController);
+  // Search feature wiring
+  const searchService = new SearchService(EventRepo);
+  const searchController = CreateSearchController(searchService);
+
+  return CreateApp(authController, resolvedLogger, eventController, rsvpController, saveController, searchController);
 }

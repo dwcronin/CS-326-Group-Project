@@ -6,6 +6,7 @@ import { IAuthController } from "./auth/AuthController";
 import type { IEventController } from "./events/EventController"; //event edit controller
 import type { IRsvpController } from "./rsvp/RsvpController";  // RSVP controller
 import type { ISaveController } from "./save/SaveController";  // Save for Later controller
+import type { ISearchController } from "./search/SearchController";  // Event Search controller
 import {
   AuthenticationRequired,
   AuthorizationRequired,
@@ -43,6 +44,7 @@ class ExpressApp implements IApp {
     private readonly eventController: IEventController,
     private readonly rsvpController: IRsvpController,
     private readonly saveController: ISaveController,
+    private readonly searchController: ISearchController,
   ) {
     this.app = express();
     this.registerMiddleware();
@@ -298,6 +300,22 @@ class ExpressApp implements IApp {
     );
 
 
+    // ── Event Search route ───────────────────────────────────────────
+
+    this.app.get(
+      "/events",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) return;
+        const session = touchAppSession(req.session as AppSessionStore);
+        const rawQuery = typeof req.query.q === "string" ? req.query.q : "";
+        const user = session.authenticatedUser;
+        const savedIds = user?.role === "user"
+          ? await this.saveController.getSavedEventIds(user.userId)
+          : [];
+        await this.searchController.showEventList(res, rawQuery, session, savedIds);
+      }),
+    );
+
     // ── Save for Later routes ────────────────────────────────────────
 
     this.app.post(
@@ -365,6 +383,7 @@ export function CreateApp(
   eventController: IEventController,
   rsvpController: IRsvpController,
   saveController: ISaveController,
+  searchController: ISearchController,
 ): IApp {
-  return new ExpressApp(authController, logger, eventController, rsvpController, saveController);
+  return new ExpressApp(authController, logger, eventController, rsvpController, saveController, searchController);
 }
