@@ -163,3 +163,123 @@ class EventController implements IEventController {
 export function CreateEventController(service: EventService): IEventController {
   return new EventController(service);
 }
+
+interface EventController {
+  changeStatusFromForm(
+    res: Response,
+    eventId: string,
+    body: Record<string, string>,
+    session: IAppBrowserSession,
+    store: AppSessionStore,
+  ): Promise<void>;
+  showAttendeeList(
+    res: Response,
+    eventId: string,
+    session: IAppBrowserSession,
+    store: AppSessionStore,
+  ): Promise<void>;
+}
+
+EventController.prototype.changeStatusFromForm = async function changeStatusFromForm(
+  this: EventController,
+  res: Response,
+  eventId: string,
+  body: Record<string, string>,
+  session: IAppBrowserSession,
+  store: AppSessionStore,
+): Promise<void> {
+  void store;
+
+  const user = session.authenticatedUser;
+  if (!user) {
+    res.redirect("/login");
+    return;
+  }
+
+  if (user.role === "user") {
+    res.status(403).render("error", {
+      message: "You do not have permission to change event status.",
+      session,
+    });
+    return;
+  }
+
+  const nextStatus = body.status;
+  if (
+    nextStatus !== "draft" &&
+    nextStatus !== "published" &&
+    nextStatus !== "cancelled" &&
+    nextStatus !== "past"
+  ) {
+    res.status(422).render("error", {
+      message: "Invalid event status.",
+      session,
+    });
+    return;
+  }
+
+  const service = (this as unknown as { service: EventService }).service;
+  const result = await service.changeEventStatus(
+    user.userId,
+    user.role,
+    eventId,
+    nextStatus,
+  );
+
+  if (result.ok === false) {
+    const status =
+      result.value.name === "EventNotFoundError" ? 404 :
+      result.value.name === "NotAuthorisedError" ? 403 :
+      422;
+
+    res.status(status).render("error", {
+      message: result.value.message,
+      session,
+    });
+    return;
+  }
+
+  res.redirect(`/events/${result.value.id}/edit`);
+};
+
+EventController.prototype.showAttendeeList = async function showAttendeeList(
+  this: EventController,
+  res: Response,
+  eventId: string,
+  session: IAppBrowserSession,
+  store: AppSessionStore,
+): Promise<void> {
+  void store;
+
+  const user = session.authenticatedUser;
+  if (!user) {
+    res.redirect("/login");
+    return;
+  }
+
+  if (user.role === "user") {
+    res.status(403).render("error", {
+      message: "You do not have permission to view attendee lists.",
+      session,
+    });
+    return;
+  }
+
+  const service = (this as unknown as { service: EventService }).service;
+  const result = await service.listEventAttendees(user.userId, user.role, eventId);
+
+  if (result.ok === false) {
+    const status = result.value.name === "EventNotFoundError" ? 404 : 403;
+    res.status(status).render("error", {
+      message: result.value.message,
+      session,
+    });
+    return;
+  }
+
+  res.render("events/attendees", {
+    attendees: result.value,
+    eventId,
+    session,
+  });
+};
