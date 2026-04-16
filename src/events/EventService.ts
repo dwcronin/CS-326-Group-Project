@@ -23,17 +23,17 @@ export class EventService {
 
     const event = await this.repo.findById(eventId);
     if (!event) {
-      return Err({ name: "EventNotFoundError", message: "Event not found." });
+      return Err({ name: "EventNotFoundError", message: "Event not found." } as const);
     }
 
     const isAdmin = actingUserRole === "admin";
     const isOrganizer = event.organizerId === actingUserId;
     if (!isAdmin && !isOrganizer) {
-      return Err({ name: "NotAuthorisedError", message: "You do not have permission to edit this event." });
+      return Err({ name: "NotAuthorisedError", message: "You do not have permission to edit this event." } as const);
     }
 
     if (event.status === "cancelled" || event.status === "past") {
-      return Err({ name: "EventNotEditableError", message: "This event has been cancelled or has already concluded and cannot be edited." });
+      return Err({ name: "EventNotEditableError", message: "This event has been cancelled or has already concluded and cannot be edited." } as const);
     }
 
     const validationError = this.validateFields(fields);
@@ -41,7 +41,7 @@ export class EventService {
 
     const updated = await this.repo.update(eventId, fields);
     if (!updated) {
-      return Err({ name: "EventNotFoundError", message: "Event could not be updated." });
+      return Err({ name: "EventNotFoundError", message: "Event could not be updated." } as const);
     }
 
     return Ok(updated);
@@ -55,17 +55,17 @@ export class EventService {
   ): Promise<Result<Event, EventEditError>> {
     const event = await this.repo.findById(eventId);
     if (!event) {
-      return Err({ name: "EventNotFoundError", message: "Event not found." });
+      return Err({ name: "EventNotFoundError", message: "Event not found." } as const);
     }
 
     const isAdmin = actingUserRole === "admin";
     const isOrganizer = event.organizerId === actingUserId;
     if (!isAdmin && !isOrganizer) {
-      return Err({ name: "NotAuthorisedError", message: "You do not have permission to edit this event." });
+      return Err({ name: "NotAuthorisedError", message: "You do not have permission to edit this event." } as const);
     }
 
     if (event.status === "cancelled" || event.status === "past") {
-      return Err({ name: "EventNotEditableError", message: "This event cannot be edited." });
+      return Err({ name: "EventNotEditableError", message: "This event cannot be edited." } as const);
     }
 
     return Ok(event);
@@ -99,6 +99,7 @@ export class EventService {
 
     return null;
   }
+
   async changeEventStatus(
     actingUserId: string,
     actingUserRole: "admin" | "staff" | "user",
@@ -106,12 +107,12 @@ export class EventService {
     nextStatus: EventStatus
   ): Promise<Result<Event, EventStatusChangeError>> {
     const event = await this.repo.findById(eventId);
-    if (!event) return Err({ name: "EventNotFoundError", message: "Event not found." });
+    if (!event) return Err({ name: "EventNotFoundError", message: "Event not found." } as const);
 
     const isAdmin = actingUserRole === "admin";
     const isOrganizer = event.organizerId === actingUserId;
     if (!isAdmin && !isOrganizer) {
-      return Err({ name: "NotAuthorisedError", message: "Not authorized to change status." });
+      return Err({ name: "NotAuthorisedError", message: "Not authorized to change status." } as const);
     }
 
     const validTransition =
@@ -119,11 +120,11 @@ export class EventService {
       (event.status === "published" && nextStatus === "cancelled");
 
     if (!validTransition) {
-      return Err({ name: "InvalidEventStatusError", message: "Invalid status transition." });
+      return Err({ name: "InvalidEventStatusError", message: "Invalid status transition." } as const);
     }
 
     const updated = await this.repo.updateStatus(eventId, nextStatus);
-    if (!updated) return Err({ name: "EventNotFoundError", message: "Update failed." });
+    if (!updated) return Err({ name: "EventNotFoundError", message: "Update failed." } as const);
 
     return Ok(updated);
   }
@@ -134,10 +135,10 @@ export class EventService {
     eventId: string
   ): Promise<Result<EventAttendeeSummary[], EventAttendeeListError>> {
     const event = await this.repo.findById(eventId);
-    if (!event) return Err({ name: "EventNotFoundError", message: "Event not found." });
+    if (!event) return Err({ name: "EventNotFoundError", message: "Event not found." } as const);
 
     if (actingUserRole !== "admin" && event.organizerId !== actingUserId) {
-      return Err({ name: "NotAuthorisedError", message: "Access denied." });
+      return Err({ name: "NotAuthorisedError", message: "Access denied." } as const);
     }
 
     const attendees = await this.repo.listAttendees(eventId);
