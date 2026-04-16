@@ -1,0 +1,51 @@
+<%--
+  src/views/save/saved-list.ejs
+  Saved events dashboard for members (Feature 14).
+
+  Expected locals:
+    savedEvents — Array<{ savedRecord: SavedEvent, event: Event }>
+    session     — IAppBrowserSession
+--%>
+
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <h1 class="text-2xl font-bold text-slate-900">Saved Events</h1>
+    <a href="/events" class="text-sm text-blue-600 hover:underline">Browse all events</a>
+  </div>
+
+  <% if (savedEvents.length === 0) { %>
+    <div class="rounded-xl bg-white border border-slate-200 shadow-sm p-10 text-center text-slate-500">
+      <p class="text-lg font-medium">No saved events yet.</p>
+      <p class="mt-1 text-sm">
+        Browse <a href="/events" class="text-blue-600 hover:underline">upcoming events</a>
+        and click <strong>Save for later</strong> on anything that interests you.
+      </p>
+    </div>
+  <% } else { %>
+    <ul class="space-y-4">
+      <% savedEvents.forEach(({ savedRecord, event }) => { %>
+        <li class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 flex items-start justify-between gap-4">
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                <%= event.category %>
+              </span>
+              <span class="text-xs text-slate-400">
+                Saved <%= savedRecord.createdAt.toLocaleDateString() %>
+              </span>
+            </div>
+            <h2 class="mt-1 text-lg font-semibold text-slate-900 truncate"><%= event.title %></h2>
+            <p class="mt-0.5 text-sm text-slate-500">
+              <%= event.location %> &middot;
+              <%= event.startDatetime.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) %>
+              at <%= event.startDatetime.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) %>
+            </p>
+          </div>
+          <div class="shrink-0 pt-1">
+            <%- include('button', { eventId: event.id, isSaved: true }) %>
+          </div>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</div>
