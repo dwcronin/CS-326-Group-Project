@@ -104,9 +104,8 @@ class EventController implements IEventController {
     if (body.title         !== undefined) fields.title         = body.title;
     if (body.description   !== undefined) fields.description   = body.description;
     if (body.location      !== undefined) fields.location      = body.location;
-    if (body.category      !== undefined) fields.category      = body.category;
-    if (body.startDatetime !== undefined) fields.startDatetime = new Date(body.startDatetime);
-    if (body.endDatetime   !== undefined) fields.endDatetime   = new Date(body.endDatetime);
+    if (body.startDatetime !== undefined) fields.startDateTime = new Date(body.startDatetime);
+    if (body.endDatetime   !== undefined) fields.endDateTime   = new Date(body.endDatetime);
 
     // Empty string means the user cleared the field — treat as "no limit" (undefined)
     if (body.capacity !== undefined && body.capacity.trim() !== "") {
