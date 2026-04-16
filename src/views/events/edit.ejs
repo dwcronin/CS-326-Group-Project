@@ -6,7 +6,7 @@
 
   <!-- Error banner — only shown when errors array is non-empty -->
   <% if (errors && errors.length > 0) { %>
-    <%- include('../partials/error', { messages: errors }) %>
+    <%- include('../partials/error', { messages: errors[0] }) %>
   <% } %>
 
   <form method="POST" action="/events/<%= event.id %>/edit">
