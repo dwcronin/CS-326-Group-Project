@@ -1,0 +1,43 @@
+<div class="max-w-3xl mx-auto py-8 px-4">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-medium text-gray-900">Attendee List</h1>
+      <p class="text-sm text-gray-600">Event ID: <%= eventId %></p>
+    </div>
+    <a
+      href="/events/<%= eventId %>/edit"
+      class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 border border-gray-300 hover:bg-gray-50"
+    >
+      Back to event
+    </a>
+  </div>
+
+  <% if (attendees.length === 0) { %>
+    <div class="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-600">
+      No active RSVPs for this event yet.
+    </div>
+  <% } else { %>
+    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Name</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Email</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">RSVP</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Joined</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          <% attendees.forEach((attendee) => { %>
+            <tr>
+              <td class="px-4 py-3 text-sm text-gray-900"><%= attendee.displayName %></td>
+              <td class="px-4 py-3 text-sm text-gray-700"><%= attendee.email %></td>
+              <td class="px-4 py-3 text-sm text-gray-700"><%= attendee.rsvpStatus %></td>
+              <td class="px-4 py-3 text-sm text-gray-700"><%= attendee.rsvpCreatedAt.toISOString().slice(0, 10) %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>

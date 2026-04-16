@@ -1,6 +1,9 @@
-// src/events/EventRepository.ts
-
-import { Event, EventUpdateFields } from "./Event";
+import type {
+  Event,
+  EventAttendeeSummary,
+  EventStatus,
+  EventUpdateFields,
+} from "./Event";
 
 /**
  * Storage interface for events.
@@ -11,5 +14,7 @@ export interface EventRepository {
   findById(id: string): Promise<Event | null>;
   save(event: Event): Promise<Event>;
   update(id: string, fields: EventUpdateFields): Promise<Event | null>;
+  updateStatus(id: string, status: EventStatus): Promise<Event | null>;
+  listAttendees(id: string): Promise<EventAttendeeSummary[]>;
   findAll(): Promise<Event[]>;
 }
