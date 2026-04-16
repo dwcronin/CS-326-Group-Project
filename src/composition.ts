@@ -12,6 +12,10 @@ import * as EventRepo from "./events/InMemoryEventRepository.js";
 import { EventService } from "./events/EventService.js";
 import { CreateEventController } from "./events/EventController.js";
 
+import * as RsvpRepo from "./rsvp/InMemoryRsvpRepository.js";
+import { RsvpService } from "./rsvp/RsvpService.js";
+import { CreateRsvpController } from "./rsvp/RsvpController.js";
+
 export function createComposedApp(logger?: ILoggingService): IApp {
   const resolvedLogger = logger ?? CreateLoggingService();
 
@@ -26,5 +30,11 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const eventService = new EventService(EventRepo);
   const eventController = CreateEventController(eventService);
 
-  return CreateApp(authController, resolvedLogger, eventController);
+  // RSVP feature wiring
+  // RsvpService takes both repos — it needs EventRepo to check event status
+  // and capacity, and RsvpRepo to read and write RSVPs.
+  const rsvpService = new RsvpService(RsvpRepo, EventRepo);
+  const rsvpController = CreateRsvpController(rsvpService);
+
+  return CreateApp(authController, resolvedLogger, eventController, rsvpController);
 }
