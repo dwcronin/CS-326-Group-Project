@@ -1,165 +1,226 @@
-// src/events/EventController.ts
-
 import type { Response } from "express";
-import type { IAppBrowserSession, AppSessionStore } from "../session/AppSession.js";
-import type { EventService } from "./EventService";
-import type { EventUpdateFields, EventEditError } from "./Event";
+import type {
+  IAppBrowserSession,
+  IAuthenticatedUserSession,
+} from "../session/AppSession";
+import type { IEventViewer } from "./Event";
+import { EventService } from "./EventService";
+import {
+  EventAccessDeniedError,
+  EventNotFoundError,
+  EventValidationError,
+} from "./errors";
 
 export interface IEventController {
+  showCreateForm(
+    res: Response,
+    session: IAppBrowserSession,
+    pageError?: string | null,
+  ): Promise<void>;
+
+  createFromForm(
+    res: Response,
+    input: {
+      title: string;
+      description: string;
+      location: string;
+      category: string;
+      startsAt: string;
+      endsAt: string;
+      capacity: string;
+    },
+    currentUser: IAuthenticatedUserSession,
+    session: IAppBrowserSession,
+  ): Promise<void>;
+
+  showEventDetail(
+    res: Response,
+    eventId: string,
+    viewer: IEventViewer,
+    session: IAppBrowserSession,
+  ): Promise<void>;
+
+  showEventsIndex(
+    res: Response,
+    session: IAppBrowserSession,
+  ): Promise<void>;
+
+  // teammate routes already expect these
   showEditForm(
     res: Response,
     eventId: string,
     session: IAppBrowserSession,
-    store: AppSessionStore,
+    _store: unknown,
   ): Promise<void>;
+
   updateEventFromForm(
     res: Response,
     eventId: string,
-    body: Record<string, string>,
+    input: Record<string, string>,
     session: IAppBrowserSession,
-    store: AppSessionStore,
+    _store: unknown,
   ): Promise<void>;
 }
 
 class EventController implements IEventController {
   constructor(private readonly service: EventService) {}
 
-  private mapErrorStatus(error: EventEditError): number {
-    if (error.name === "EventNotFoundError")    return 404;
-    if (error.name === "NotAuthorisedError")    return 403;
-    if (error.name === "EventNotEditableError") return 422;
-    if (error.name === "InvalidTitleError")     return 422;
-    if (error.name === "InvalidDescriptionError") return 422;
-    if (error.name === "InvalidDateError")      return 422;
-    if (error.name === "InvalidCapacityError")  return 422;
-    return 500;
+  async showCreateForm(
+    res: Response,
+    session: IAppBrowserSession,
+    pageError: string | null = null,
+  ): Promise<void> {
+    res.render("events/new", {
+      pageError,
+      session,
+      formData: {
+        title: "",
+        description: "",
+        location: "",
+        category: "",
+        startsAt: "",
+        endsAt: "",
+        capacity: "",
+      },
+    });
   }
 
-  async showEditForm(
+  async createFromForm(
+    res: Response,
+    input: {
+      title: string;
+      description: string;
+      location: string;
+      category: string;
+      startsAt: string;
+      endsAt: string;
+      capacity: string;
+    },
+    currentUser: IAuthenticatedUserSession,
+    session: IAppBrowserSession,
+  ): Promise<void> {
+    try {
+      const event = await this.service.createEvent(
+        {
+          title: input.title,
+          description: input.description,
+          location: input.location,
+          category: input.category,
+          startsAt: new Date(input.startsAt),
+          endsAt: new Date(input.endsAt),
+          capacity:
+            input.capacity.trim() === ""
+              ? null
+              : Number.parseInt(input.capacity, 10),
+        },
+        {
+          userId: currentUser.userId,
+          name: currentUser.displayName,
+          role: currentUser.role,
+        },
+      );
+
+      res.redirect(`/events/${event.id}`);
+    } catch (error) {
+      if (
+        error instanceof EventValidationError ||
+        error instanceof EventAccessDeniedError
+      ) {
+        res.status(
+          error instanceof EventAccessDeniedError ? 403 : 400,
+        );
+
+        res.render("events/new", {
+          pageError: error.message,
+          session,
+          formData: input,
+        });
+        return;
+      }
+
+      throw error;
+    }
+  }
+
+  async showEventDetail(
     res: Response,
     eventId: string,
+    viewer: IEventViewer,
     session: IAppBrowserSession,
-    store: AppSessionStore,
   ): Promise<void> {
-    const user = session.authenticatedUser;
+    try {
+      const event = await this.service.getEventById(eventId, viewer);
 
-    if (!user) {
-      res.redirect("/login");
-      return;
-    }
-
-    if (user.role === "user") {
-      res.status(403).render("partials/error", {
-        message: "You do not have permission to edit events.",
-        layout: false,
+      res.render("events/show", {
+        pageError: null,
+        session,
+        event,
       });
-      return;
+    } catch (error) {
+      if (error instanceof EventNotFoundError) {
+        res.status(404).render("partials/error", {
+          message: "Event not found",
+          layout: false,
+        });
+        return;
+      }
+
+      if (error instanceof EventAccessDeniedError) {
+        res.status(403).render("partials/error", {
+          message: "Access denied",
+          layout: false,
+        });
+        return;
+      }
+
+      throw error;
     }
+  }
 
-    const result = await this.service.getEventForEdit(
-      user.userId,
-      user.role,
-      eventId,
-    );
+  async showEventsIndex(
+    res: Response,
+    session: IAppBrowserSession,
+  ): Promise<void> {
+    const events = await this.service.listPublishedEvents();
 
-    if (result.ok === false) {
-      res.status(this.mapErrorStatus(result.value)).render("partials/error", {
-        message: result.value.message,
-        layout: false,
-      });
-      return;
-    }
+    res.render("events/index", {
+      pageError: null,
+      session,
+      events,
+    });
+  }
 
-    res.render("events/edit", {
-      event:   result.value,
-      errors:  [],
-      fields:  {},
+  // temporary placeholders so teammate routes keep compiling
+  async showEditForm(
+    res: Response,
+    _eventId: string,
+    session: IAppBrowserSession,
+    _store: unknown,
+  ): Promise<void> {
+    res.status(501).render("partials/error", {
+      message: "Event editing is not implemented yet.",
+      layout: false,
       session,
     });
   }
 
   async updateEventFromForm(
     res: Response,
-    eventId: string,
-    body: Record<string, string>,
+    _eventId: string,
+    _input: Record<string, string>,
     session: IAppBrowserSession,
-    store: AppSessionStore,
+    _store: unknown,
   ): Promise<void> {
-    const user = session.authenticatedUser;
-
-    if (!user) {
-      res.redirect("/login");
-      return;
-    }
-
-    if (user.role === "user") {
-      res.status(403).render("partials/error", {
-        message: "You do not have permission to edit events.",
-        layout: false,
-      });
-      return;
-    }
-
-    const fields: EventUpdateFields = {};
-    if (body.title         !== undefined) fields.title         = body.title;
-    if (body.description   !== undefined) fields.description   = body.description;
-    if (body.location      !== undefined) fields.location      = body.location;
-    if (body.category      !== undefined) fields.category      = body.category;
-    if (body.startDatetime !== undefined) fields.startDatetime = new Date(body.startDatetime);
-    if (body.endDatetime   !== undefined) fields.endDatetime   = new Date(body.endDatetime);
-
-    // Empty string means the user cleared the field — treat as "no limit" (undefined)
-    if (body.capacity !== undefined && body.capacity.trim() !== "") {
-      fields.capacity = parseInt(body.capacity, 10);
-    }
-
-    const result = await this.service.updateEvent(
-      user.userId,
-      user.role,
-      eventId,
-      fields,
-    );
-
-    if (result.ok === false) {
-      const isValidationError =
-        result.value.name === "InvalidTitleError"       ||
-        result.value.name === "InvalidDescriptionError" ||
-        result.value.name === "InvalidDateError"        ||
-        result.value.name === "InvalidCapacityError";
-
-      if (isValidationError) {
-        // Re-fetch the event to populate the form base, then re-render
-        // with the error message and the values the user typed.
-        const eventResult = await this.service.getEventForEdit(
-          user.userId, user.role, eventId,
-        );
-        if (eventResult.ok === false) {
-          res.status(this.mapErrorStatus(eventResult.value)).render("partials/error", {
-            message: eventResult.value.message,
-            layout: false,
-          });
-          return;
-        }
-        res.status(422).render("events/edit", {
-          event:   eventResult.value,
-          errors:  [result.value.message],
-          fields:  body,
-          session,
-        });
-        return;
-      }
-
-      res.status(this.mapErrorStatus(result.value)).render("partials/error", {
-        message: result.value.message,
-        layout: false,
-      });
-      return;
-    }
-
-    res.redirect(`/events/${result.value.id}`);
+    res.status(501).render("partials/error", {
+      message: "Event editing is not implemented yet.",
+      layout: false,
+      session,
+    });
   }
 }
 
-export function CreateEventController(service: EventService): IEventController {
+export function CreateEventController(
+  service: EventService,
+): IEventController {
   return new EventController(service);
 }
