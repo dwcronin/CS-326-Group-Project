@@ -270,7 +270,7 @@ class ExpressApp implements IApp {
         const session = touchAppSession(req.session as AppSessionStore);
         await this.eventController.showEditForm(
           res,
-          req.params.id,
+          String(req.params.id),
           session,
           req.session as AppSessionStore
         );
@@ -287,7 +287,7 @@ class ExpressApp implements IApp {
         const session = touchAppSession(req.session as AppSessionStore);
         await this.eventController.updateEventFromForm(
           res,
-          req.params.id,
+          String(req.params.id),
           req.body as Record<string, string>,
           session,
           req.session as AppSessionStore,
@@ -308,7 +308,7 @@ class ExpressApp implements IApp {
         const session = touchAppSession(req.session as AppSessionStore);
         await this.rsvpController.toggleRsvp(
           res,
-          req.params.id,
+          String(req.params.id),
           session,
           req.session as AppSessionStore,
         );
