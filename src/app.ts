@@ -14,6 +14,7 @@ import {
   getAuthenticatedUser,
   isAuthenticatedSession,
   AppSessionStore,
+  type IAppBrowserSession,
   recordPageView,
   touchAppSession,
 } from "./session/AppSession";
@@ -267,7 +268,7 @@ class ExpressApp implements IApp {
         const session = touchAppSession(req.session as AppSessionStore);
         await this.eventController.showEditForm(
           res,
-          req.params.id,
+          typeof req.params.id === "string" ? req.params.id : "",
           session,
           req.session as AppSessionStore
         );
@@ -284,8 +285,58 @@ class ExpressApp implements IApp {
         const session = touchAppSession(req.session as AppSessionStore);
         await this.eventController.updateEventFromForm(
           res,
-          req.params.id,
+          typeof req.params.id === "string" ? req.params.id : "",
           req.body as Record<string, string>,
+          session,
+          req.session as AppSessionStore,
+        );
+      }),
+    );
+
+    this.app.post(
+      "/events/:id/status",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const session = touchAppSession(req.session as AppSessionStore);
+        await (this.eventController as IEventController & {
+          changeStatusFromForm: (
+            res: Response,
+            eventId: string,
+            body: Record<string, string>,
+            session: IAppBrowserSession,
+            store: AppSessionStore,
+          ) => Promise<void>;
+        }).changeStatusFromForm(
+          res,
+          typeof req.params.id === "string" ? req.params.id : "",
+          req.body as Record<string, string>,
+          session,
+          req.session as AppSessionStore,
+        );
+      }),
+    );
+
+    this.app.get(
+      "/events/:id/attendees",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const session = touchAppSession(req.session as AppSessionStore);
+        await (this.eventController as IEventController & {
+          showAttendeeList: (
+            res: Response,
+            eventId: string,
+            session: IAppBrowserSession,
+            store: AppSessionStore,
+          ) => Promise<void>;
+        }).showAttendeeList(
+          res,
+          typeof req.params.id === "string" ? req.params.id : "",
           session,
           req.session as AppSessionStore,
         );
