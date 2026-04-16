@@ -1,3 +1,4 @@
+TypeScript
 import { DEMO_USERS } from "../auth/InMemoryUserRepository";
 import * as RsvpRepo from "../rsvp/InMemoryRsvpRepository";
 import type {
@@ -53,49 +54,53 @@ const DEMO_EVENTS: Event[] = [
 ];
 
 class InMemoryEventRepository implements EventRepository {
-  constructor(private readonly events: Event[]) {}
+  private events: Event[];
+
+  constructor(events: Event[]) {
+    this.events = events;
+  }
 
   async findById(id: string): Promise<Event | null> {
     const match = this.events.find((event) => event.id === id);
     return match ? { ...match } : null;
   }
 
+  async save(event: Event): Promise<Event> {
+    const index = this.events.findIndex((e) => e.id === event.id);
+    if (index !== -1) {
+      this.events[index] = event;
+    } else {
+      this.events.push(event);
+    }
+    return event;
+  }
+
   async update(id: string, fields: EventUpdateFields): Promise<Event | null> {
     const event = this.events.find((item) => item.id === id);
-    if (!event) {
-      return null;
-    }
-
-    Object.assign(event, {
-      ...fields,
-      updatedAt: new Date(),
-    });
-
+    if (!event) return null;
+    Object.assign(event, { ...fields, updatedAt: new Date() });
     return { ...event };
   }
 
   async updateStatus(id: string, status: EventStatus): Promise<Event | null> {
     const event = this.events.find((item) => item.id === id);
-    if (!event) {
-      return null;
-    }
-
+    if (!event) return null;
     event.status = status;
     event.updatedAt = new Date();
     return { ...event };
   }
 
+  async findAll(): Promise<Event[]> {
+    return [...this.events];
+  }
+
   async listAttendees(id: string): Promise<EventAttendeeSummary[]> {
     const rsvps = await RsvpRepo.listByEventId(id);
-
     return rsvps
       .filter((rsvp) => rsvp.status === "going" || rsvp.status === "waitlisted")
       .map((rsvp) => {
         const user = DEMO_USERS.find((candidate) => candidate.id === rsvp.userId);
-        if (!user) {
-          return null;
-        }
-
+        if (!user) return null;
         return {
           userId: user.id,
           email: user.email,
@@ -107,12 +112,20 @@ class InMemoryEventRepository implements EventRepository {
       })
       .filter((attendee): attendee is EventAttendeeSummary => attendee !== null);
   }
+
+  clear(): void {
+    this.events = [];
+  }
 }
 
 const repo = new InMemoryEventRepository([...DEMO_EVENTS]);
 
 export async function findById(id: string): Promise<Event | null> {
   return repo.findById(id);
+}
+
+export async function save(event: Event): Promise<Event> {
+  return repo.save(event);
 }
 
 export async function update(id: string, fields: EventUpdateFields): Promise<Event | null> {
@@ -123,6 +136,14 @@ export async function updateStatus(id: string, status: EventStatus): Promise<Eve
   return repo.updateStatus(id, status);
 }
 
+export async function findAll(): Promise<Event[]> {
+  return repo.findAll();
+}
+
 export async function listAttendees(id: string): Promise<EventAttendeeSummary[]> {
   return repo.listAttendees(id);
+}
+
+export function _clearForTesting(): void {
+  repo.clear();
 }
