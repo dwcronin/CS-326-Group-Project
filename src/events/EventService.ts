@@ -142,6 +142,7 @@ export class EventService {
 
     const attendees = await this.repo.listAttendees(eventId);
 
+    // Show "going" attendees first, then order each group by RSVP time.
     const sorted = [...attendees].sort((a, b) => {
       if (a.rsvpStatus !== b.rsvpStatus) {
         return a.rsvpStatus === "going" ? -1 : 1;
