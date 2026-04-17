@@ -3,10 +3,10 @@ import express, { Request, RequestHandler, Response } from "express";
 import session from "express-session";
 import Layouts from "express-ejs-layouts";
 import { IAuthController } from "./auth/AuthController";
-import type { IEventController } from "./events/EventController"; //event edit controller
-import type { IRsvpController } from "./rsvp/RsvpController";  // RSVP controller
-import type { ISaveController } from "./save/SaveController";  // Save for Later controller
-import type { ISearchController } from "./search/SearchController";  // Event Search controller
+import type { IEventController } from "./events/EventController";
+import type { IRsvpController } from "./rsvp/RsvpController";
+import type { ISaveController } from "./save/SaveController";
+import type { ISearchController } from "./search/SearchController";
 import {
   AuthenticationRequired,
   AuthorizationRequired,
@@ -21,7 +21,6 @@ import {
   touchAppSession,
 } from "./session/AppSession";
 import { ILoggingService } from "./service/LoggingService";
-
 
 type AsyncRequestHandler = RequestHandler;
 
@@ -53,7 +52,6 @@ class ExpressApp implements IApp {
   }
 
   private registerMiddleware(): void {
-    // Serve static files from src/static (create this directory to add your own assets)
     this.app.use(express.static(path.join(process.cwd(), "src/static")));
     this.app.use(
       session({
@@ -81,10 +79,6 @@ class ExpressApp implements IApp {
     return req.get("HX-Request") === "true";
   }
 
-  /**
-   * Middleware helper: returns true if the request is from an authenticated user.
-   * If the user is not authenticated, it handles the response (redirect or 401).
-   */
   private requireAuthenticated(req: Request, res: Response): boolean {
     const store = sessionStore(req);
     touchAppSession(store);
@@ -106,11 +100,6 @@ class ExpressApp implements IApp {
     return false;
   }
 
-  /**
-   * Middleware helper: returns true if the authenticated user has one of the
-   * allowed roles. Calls requireAuthenticated first, so unauthenticated
-   * requests are handled automatically.
-   */
   private requireRole(
     req: Request,
     res: Response,
@@ -247,7 +236,6 @@ class ExpressApp implements IApp {
     );
 
     // ── Authenticated home page ──────────────────────────────────────
-    // TODO: Replace this placeholder with your project's main page.
 
     this.app.get(
       "/home",
@@ -262,7 +250,42 @@ class ExpressApp implements IApp {
       }),
     );
 
-    // ── Event edit routes ───────────────────────────────────────────
+    // ── Event creation routes ────────────────────────────────────────
+
+    this.app.get(
+      "/events/new",
+      asyncHandler(async (req, res) => {
+        if (!this.requireRole(req, res, ["admin", "staff"], "Only organizers can create events.")) {
+          return;
+        }
+
+        const session = touchAppSession(sessionStore(req));
+        await this.eventController.showCreateForm(
+          res,
+          session,
+          req.session as AppSessionStore,
+        );
+      }),
+    );
+
+    this.app.post(
+      "/events",
+      asyncHandler(async (req, res) => {
+        if (!this.requireRole(req, res, ["admin", "staff"], "Only organizers can create events.")) {
+          return;
+        }
+
+        const session = touchAppSession(sessionStore(req));
+        await this.eventController.createEventFromForm(
+          res,
+          req.body as Record<string, string>,
+          session,
+          req.session as AppSessionStore,
+        );
+      }),
+    );
+
+    // ── Event edit routes ────────────────────────────────────────────
 
     this.app.get(
       "/events/:id/edit",
@@ -276,7 +299,7 @@ class ExpressApp implements IApp {
           res,
           String(req.params.id),
           session,
-          req.session as AppSessionStore
+          req.session as AppSessionStore,
         );
       }),
     );
@@ -298,7 +321,6 @@ class ExpressApp implements IApp {
         );
       }),
     );
-
 
     // ── Event Search route ───────────────────────────────────────────
 
@@ -341,7 +363,7 @@ class ExpressApp implements IApp {
       }),
     );
 
-    // ── RSVP routes ─────────────────────────────────────────────────
+    // ── RSVP routes ──────────────────────────────────────────────────
 
     this.app.post(
       "/events/:id/rsvp",
@@ -385,5 +407,12 @@ export function CreateApp(
   saveController: ISaveController,
   searchController: ISearchController,
 ): IApp {
-  return new ExpressApp(authController, logger, eventController, rsvpController, saveController, searchController);
+  return new ExpressApp(
+    authController,
+    logger,
+    eventController,
+    rsvpController,
+    saveController,
+    searchController,
+  );
 }
