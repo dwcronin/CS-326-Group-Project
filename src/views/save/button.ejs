@@ -1,11 +1,11 @@
-<%--
+<%#
   src/views/save/button.ejs
   Reusable save/unsave toggle button for Feature 14.
 
   Expected locals:
     eventId  — string
     isSaved  — boolean
---%>
+%>
 
 <form method="POST" action="/events/<%= eventId %>/save" class="inline">
   <% if (isSaved) { %>
