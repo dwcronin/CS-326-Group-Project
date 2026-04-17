@@ -1,17 +1,39 @@
 // src/events/EventController.ts
 
 import type { Response } from "express";
-import type { IAppBrowserSession, AppSessionStore } from "../session/AppSession.js";
+import type {
+  IAppBrowserSession,
+  AppSessionStore,
+} from "../session/AppSession.js";
 import type { EventService } from "./EventService";
-import type { EventUpdateFields, EventEditError } from "./Event";
+import type {
+  CreateEventInput,
+  EventCreateError,
+  EventUpdateFields,
+  EventEditError,
+} from "./Event";
 
 export interface IEventController {
+  showCreateForm(
+    res: Response,
+    session: IAppBrowserSession,
+    store: AppSessionStore,
+  ): Promise<void>;
+
+  createEventFromForm(
+    res: Response,
+    body: Record<string, string>,
+    session: IAppBrowserSession,
+    store: AppSessionStore,
+  ): Promise<void>;
+
   showEditForm(
     res: Response,
     eventId: string,
     session: IAppBrowserSession,
     store: AppSessionStore,
   ): Promise<void>;
+
   updateEventFromForm(
     res: Response,
     eventId: string,
@@ -24,15 +46,103 @@ export interface IEventController {
 class EventController implements IEventController {
   constructor(private readonly service: EventService) {}
 
-  private mapErrorStatus(error: EventEditError): number {
-    if (error.name === "EventNotFoundError")    return 404;
-    if (error.name === "NotAuthorisedError")    return 403;
-    if (error.name === "EventNotEditableError") return 422;
-    if (error.name === "InvalidTitleError")     return 422;
+  private mapCreateErrorStatus(error: EventCreateError): number {
+    if (error.name === "NotAuthorisedError") return 403;
+    if (error.name === "InvalidTitleError") return 422;
     if (error.name === "InvalidDescriptionError") return 422;
-    if (error.name === "InvalidDateError")      return 422;
-    if (error.name === "InvalidCapacityError")  return 422;
+    if (error.name === "InvalidDateError") return 422;
+    if (error.name === "InvalidCapacityError") return 422;
     return 500;
+  }
+
+  private mapEditErrorStatus(error: EventEditError): number {
+    if (error.name === "EventNotFoundError") return 404;
+    if (error.name === "NotAuthorisedError") return 403;
+    if (error.name === "EventNotEditableError") return 422;
+    if (error.name === "InvalidTitleError") return 422;
+    if (error.name === "InvalidDescriptionError") return 422;
+    if (error.name === "InvalidDateError") return 422;
+    if (error.name === "InvalidCapacityError") return 422;
+    return 500;
+  }
+
+  async showCreateForm(
+    res: Response,
+    session: IAppBrowserSession,
+    store: AppSessionStore,
+  ): Promise<void> {
+    const user = session.authenticatedUser;
+
+    if (!user) {
+      res.redirect("/login");
+      return;
+    }
+
+    if (user.role === "user") {
+      res.status(403).render("partials/error", {
+        message: "Only organizers can create events.",
+        layout: false,
+      });
+      return;
+    }
+
+    res.render("events/new", {
+      errors: [],
+      fields: {},
+      session,
+    });
+  }
+
+  async createEventFromForm(
+    res: Response,
+    body: Record<string, string>,
+    session: IAppBrowserSession,
+    store: AppSessionStore,
+  ): Promise<void> {
+    const user = session.authenticatedUser;
+
+    if (!user) {
+      res.redirect("/login");
+      return;
+    }
+
+    if (user.role === "user") {
+      res.status(403).render("partials/error", {
+        message: "Only organizers can create events.",
+        layout: false,
+      });
+      return;
+    }
+
+    const input: CreateEventInput = {
+      title: body.title ?? "",
+      description: body.description ?? "",
+      location: body.location ?? "",
+      category: body.category ?? "",
+      startDatetime: new Date(body.startDatetime ?? ""),
+      endDatetime: new Date(body.endDatetime ?? ""),
+      capacity:
+        body.capacity !== undefined && body.capacity.trim() !== ""
+          ? parseInt(body.capacity, 10)
+          : undefined,
+    };
+
+    const result = await this.service.createEvent(
+      user.userId,
+      user.role,
+      input,
+    );
+
+    if (result.ok === false) {
+      res.status(this.mapCreateErrorStatus(result.value)).render("events/new", {
+        errors: [result.value.message],
+        fields: body,
+        session,
+      });
+      return;
+    }
+
+    res.redirect(`/events/${result.value.id}`);
   }
 
   async showEditForm(
@@ -63,7 +173,7 @@ class EventController implements IEventController {
     );
 
     if (result.ok === false) {
-      res.status(this.mapErrorStatus(result.value)).render("partials/error", {
+      res.status(this.mapEditErrorStatus(result.value)).render("partials/error", {
         message: result.value.message,
         layout: false,
       });
@@ -71,9 +181,9 @@ class EventController implements IEventController {
     }
 
     res.render("events/edit", {
-      event:   result.value,
-      errors:  [],
-      fields:  {},
+      event: result.value,
+      errors: [],
+      fields: {},
       session,
     });
   }
@@ -101,14 +211,17 @@ class EventController implements IEventController {
     }
 
     const fields: EventUpdateFields = {};
-    if (body.title         !== undefined) fields.title         = body.title;
-    if (body.description   !== undefined) fields.description   = body.description;
-    if (body.location      !== undefined) fields.location      = body.location;
-    if (body.category      !== undefined) fields.category      = body.category;
-    if (body.startDatetime !== undefined) fields.startDatetime = new Date(body.startDatetime);
-    if (body.endDatetime   !== undefined) fields.endDatetime   = new Date(body.endDatetime);
+    if (body.title !== undefined) fields.title = body.title;
+    if (body.description !== undefined) fields.description = body.description;
+    if (body.location !== undefined) fields.location = body.location;
+    if (body.category !== undefined) fields.category = body.category;
+    if (body.startDatetime !== undefined) {
+      fields.startDatetime = new Date(body.startDatetime);
+    }
+    if (body.endDatetime !== undefined) {
+      fields.endDatetime = new Date(body.endDatetime);
+    }
 
-    // Empty string means the user cleared the field — treat as "no limit" (undefined)
     if (body.capacity !== undefined && body.capacity.trim() !== "") {
       fields.capacity = parseInt(body.capacity, 10);
     }
@@ -122,34 +235,36 @@ class EventController implements IEventController {
 
     if (result.ok === false) {
       const isValidationError =
-        result.value.name === "InvalidTitleError"       ||
+        result.value.name === "InvalidTitleError" ||
         result.value.name === "InvalidDescriptionError" ||
-        result.value.name === "InvalidDateError"        ||
+        result.value.name === "InvalidDateError" ||
         result.value.name === "InvalidCapacityError";
 
       if (isValidationError) {
-        // Re-fetch the event to populate the form base, then re-render
-        // with the error message and the values the user typed.
         const eventResult = await this.service.getEventForEdit(
-          user.userId, user.role, eventId,
+          user.userId,
+          user.role,
+          eventId,
         );
+
         if (eventResult.ok === false) {
-          res.status(this.mapErrorStatus(eventResult.value)).render("partials/error", {
+          res.status(this.mapEditErrorStatus(eventResult.value)).render("partials/error", {
             message: eventResult.value.message,
             layout: false,
           });
           return;
         }
+
         res.status(422).render("events/edit", {
-          event:   eventResult.value,
-          errors:  [result.value.message],
-          fields:  body,
+          event: eventResult.value,
+          errors: [result.value.message],
+          fields: body,
           session,
         });
         return;
       }
 
-      res.status(this.mapErrorStatus(result.value)).render("partials/error", {
+      res.status(this.mapEditErrorStatus(result.value)).render("partials/error", {
         message: result.value.message,
         layout: false,
       });
