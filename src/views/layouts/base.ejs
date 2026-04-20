@@ -18,19 +18,28 @@
           <span class="w-2.5 h-2.5 rounded-full bg-gradient-to-b from-blue-400 to-blue-600"></span>
           Project Starter
         </a>
+
         <div class="flex items-center gap-3 flex-wrap">
           <% if (session?.authenticatedUser) { %>
             <a href="/events" class="text-blue-700 font-semibold no-underline hover:underline">Events</a>
+
+            <% if (session.authenticatedUser.role === "admin" || session.authenticatedUser.role === "staff") { %>
+              <a href="/events/new" class="text-blue-700 font-semibold no-underline hover:underline">Create Event</a>
+            <% } %>
+
             <% if (session.authenticatedUser.role === "user") { %>
               <a href="/saved-events" class="text-amber-600 font-semibold no-underline hover:underline">Saved</a>
             <% } %>
+
             <% if (session.authenticatedUser.role === "admin") { %>
               <a href="/admin/users" class="text-blue-700 font-semibold no-underline hover:underline">Manage Users</a>
             <% } %>
+
             <span class="text-slate-500">
               Signed in as <strong class="text-slate-700"><%= session.authenticatedUser.displayName %></strong>
               (<%= session.authenticatedUser.role %>)
             </span>
+
             <form method="post" action="/logout" class="m-0">
               <button
                 type="submit"
@@ -44,7 +53,10 @@
           <% } %>
         </div>
       </nav>
-      <main class="max-w-5xl mx-auto"><%- body %></main>
+
+      <main class="max-w-5xl mx-auto">
+        <%- body %>
+      </main>
     </div>
   </body>
 </html>
