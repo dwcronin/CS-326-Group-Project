@@ -126,8 +126,6 @@ class ExpressApp implements IApp {
   }
 
   private registerRoutes(): void {
-    // ── Public routes ────────────────────────────────────────────────
-
     this.app.get(
       "/",
       asyncHandler(async (req, res) => {
@@ -167,8 +165,6 @@ class ExpressApp implements IApp {
         await this.authController.logoutFromForm(res, sessionStore(req));
       }),
     );
-
-    // ── Admin routes ─────────────────────────────────────────────────
 
     this.app.get(
       "/admin/users",
@@ -235,8 +231,6 @@ class ExpressApp implements IApp {
       }),
     );
 
-    // ── Authenticated home page ──────────────────────────────────────
-
     this.app.get(
       "/home",
       asyncHandler(async (req, res) => {
@@ -245,12 +239,21 @@ class ExpressApp implements IApp {
         }
 
         const browserSession = recordPageView(sessionStore(req));
-        this.logger.info(`GET /home for ${browserSession.browserLabel}`);
-        res.render("home", { session: browserSession, pageError: null });
+        const currentUser = browserSession.authenticatedUser;
+
+        if (!currentUser) {
+          res.redirect("/login");
+          return;
+        }
+
+        if (currentUser.role === "admin" || currentUser.role === "staff") {
+          res.redirect("/events/new");
+          return;
+        }
+
+        res.redirect("/events");
       }),
     );
-
-    // ── Event creation routes ────────────────────────────────────────
 
     this.app.get(
       "/events/new",
@@ -285,7 +288,22 @@ class ExpressApp implements IApp {
       }),
     );
 
-    // ── Event edit routes ────────────────────────────────────────────
+    this.app.post(
+      "/events/:id/publish",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const session = touchAppSession(req.session as AppSessionStore);
+        await this.eventController.publishEventFromForm(
+          res,
+          String(req.params.id),
+          session,
+          req.session as AppSessionStore,
+        );
+      }),
+    );
 
     this.app.get(
       "/events/:id/edit",
@@ -322,28 +340,27 @@ class ExpressApp implements IApp {
       }),
     );
 
-    // ── Event Search route ───────────────────────────────────────────
-
     this.app.get(
       "/events",
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) return;
+
         const session = touchAppSession(req.session as AppSessionStore);
         const rawQuery = typeof req.query.q === "string" ? req.query.q : "";
         const user = session.authenticatedUser;
         const savedIds = user?.role === "user"
           ? await this.saveController.getSavedEventIds(user.userId)
           : [];
+
         await this.searchController.showEventList(res, rawQuery, session, savedIds);
       }),
     );
-
-    // ── Save for Later routes ────────────────────────────────────────
 
     this.app.post(
       "/events/:id/save",
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) return;
+
         const session = touchAppSession(req.session as AppSessionStore);
         await this.saveController.toggleSaveEvent(
           res,
@@ -358,12 +375,11 @@ class ExpressApp implements IApp {
       "/saved-events",
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) return;
+
         const session = touchAppSession(req.session as AppSessionStore);
         await this.saveController.showSavedList(res, session);
       }),
     );
-
-    // ── RSVP routes ──────────────────────────────────────────────────
 
     this.app.post(
       "/events/:id/rsvp",
@@ -381,8 +397,6 @@ class ExpressApp implements IApp {
         );
       }),
     );
-
-    // ── Error handler ────────────────────────────────────────────────
 
     this.app.use((err: unknown, _req: Request, res: Response, _next: (value?: unknown) => void) => {
       const message = err instanceof Error ? err.message : "Unexpected server error.";
