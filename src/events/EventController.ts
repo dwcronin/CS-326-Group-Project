@@ -388,7 +388,8 @@ class EventController implements IEventController {
       return;
     }
 
-    res.redirect(`/events/${eventId}/edit`);
+    res.set("HX-Redirect", `/events/${eventId}`);
+    res.status(200).end();
   }
 
   async publishEventFromForm(
