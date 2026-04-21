@@ -304,6 +304,7 @@ class EventController implements IEventController {
     body: Record<string, string>,
     session: IAppBrowserSession,
     _store: AppSessionStore,
+    isHtmx: boolean,
   ): Promise<void> {
     const user = session.authenticatedUser;
 
@@ -377,7 +378,7 @@ class EventController implements IEventController {
           errors: [result.value.message],
           fields: body,
           session,
-          layout: false,
+          layout: isHtmx ? false : undefined,
         });
         return;
       }
@@ -389,8 +390,12 @@ class EventController implements IEventController {
       return;
     }
 
-    res.set("HX-Redirect", `/events/${result.value.id}`);
-    res.status(200).end();
+    if (isHtmx) {
+      res.set("HX-Redirect", `/events/${result.value.id}`);
+      res.status(200).end();
+    } else {
+      res.redirect(`/events/${result.value.id}`);
+    }
   }
 
   async publishEventFromForm(
