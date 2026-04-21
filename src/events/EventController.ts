@@ -234,7 +234,7 @@ class EventController implements IEventController {
       eventId,
     );
 
-    if (!result.ok) {
+    if (result.ok === false) {
       const error = this.toEditError(result);
 
       res.status(this.mapEditErrorStatus(error)).render("partials/error", {
@@ -279,7 +279,7 @@ class EventController implements IEventController {
       eventId,
     );
 
-    if (!result.ok) {
+    if (result.ok === false) {
       const error = this.toEditError(result);
 
       res.status(this.mapEditErrorStatus(error)).render("partials/error", {
@@ -347,7 +347,7 @@ class EventController implements IEventController {
       fields,
     );
 
-    if (!result.ok) {
+    if (result.ok === false) {
       const error = this.toEditError(result);
 
       const isValidationError =
@@ -426,7 +426,7 @@ class EventController implements IEventController {
       "published",
     );
 
-    if (!result.ok) {
+    if (result.ok === false) {
       const error = this.toStatusError(result);
 
       res.status(this.mapStatusErrorStatus(error)).render("partials/error", {
