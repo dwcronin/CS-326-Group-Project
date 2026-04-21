@@ -336,6 +336,7 @@ class ExpressApp implements IApp {
           req.body as Record<string, string>,
           session,
           req.session as AppSessionStore,
+          this.isHtmxRequest(req),
         );
       }),
     );

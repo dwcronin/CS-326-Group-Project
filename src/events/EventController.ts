@@ -48,6 +48,7 @@ export interface IEventController {
     body: Record<string, string>,
     session: IAppBrowserSession,
     store: AppSessionStore,
+    isHtmx: boolean,
   ): Promise<void>;
 
   publishEventFromForm(
@@ -373,7 +374,7 @@ class EventController implements IEventController {
 
         res.status(422).render("events/edit", {
           event: eventResult.value,
-          errors: [error.message],
+          errors: [result.value.message],
           fields: body,
           session,
           layout: false,
@@ -388,7 +389,7 @@ class EventController implements IEventController {
       return;
     }
 
-    res.set("HX-Redirect", `/events/${eventId}`);
+    res.set("HX-Redirect", `/events/${result.value.id}`);
     res.status(200).end();
   }
 
