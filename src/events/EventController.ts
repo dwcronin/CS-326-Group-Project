@@ -35,6 +35,13 @@ export interface IEventController {
     store: AppSessionStore,
   ): Promise<void>;
 
+  showEditFormPartial(
+    res: Response,
+    eventId: string,
+    session: IAppBrowserSession,
+    store: AppSessionStore,
+  ): Promise<void>;
+
   updateEventFromForm(
     res: Response,
     eventId: string,
@@ -241,6 +248,52 @@ class EventController implements IEventController {
       errors: [],
       fields: {},
       session,
+    });
+  }
+
+  async showEditFormPartial(
+    res: Response,
+    eventId: string,
+    session: IAppBrowserSession,
+    _store: AppSessionStore,
+  ): Promise<void> {
+    const user = session.authenticatedUser;
+
+    if (!user) {
+      res.redirect("/login");
+      return;
+    }
+
+    if (user.role === "user") {
+      res.status(403).render("partials/error", {
+        message: "You do not have permission to edit events.",
+        layout: false,
+      });
+      return;
+    }
+
+    const result = await this.service.getEventForEdit(
+      user.userId,
+      user.role,
+      eventId,
+    );
+
+    if (!result.ok) {
+      const error = this.toEditError(result);
+
+      res.status(this.mapEditErrorStatus(error)).render("partials/error", {
+        message: error.message,
+        layout: false,
+      });
+      return;
+    }
+
+    res.render("events/edit", {
+      event: result.value,
+      errors: [],
+      fields: {},
+      session,
+      layout: false,
     });
   }
 
