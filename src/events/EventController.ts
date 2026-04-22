@@ -250,6 +250,7 @@ class EventController implements IEventController {
     body: Record<string, string>,
     session: IAppBrowserSession,
     _store: AppSessionStore,
+    isHtmx: boolean = false,
   ): Promise<void> {
     const user = session.authenticatedUser;
 
@@ -295,15 +296,54 @@ class EventController implements IEventController {
     if (result.ok === false) {
       const error = this.toEditError(result);
 
-      res.status(this.mapEditErrorStatus(error)).render("partials/error", {
-        message: error.message,
-        layout: false,
+      const isValidationError =
+      error.name === "InvalidTitleError"       ||
+      error.name === "InvalidDescriptionError" ||
+      error.name === "InvalidDateError"        ||
+      error.name === "InvalidCapacityError";
+
+    if (isValidationError) {
+      // Re-fetch the event to populate the form base
+      const eventResult = await this.service.getEventForEdit(
+        user.userId,
+        user.role,
+        eventId,
+      );
+      if (eventResult.ok === false) {
+        const fetchError = this.toEditError(eventResult);
+        res.status(this.mapEditErrorStatus(fetchError)).render("partials/error", {
+          message: fetchError.message,
+          layout: false,
+        });
+        return;
+      }
+      // Re-render the form with the error and the user's typed values
+      res.status(422).render("events/edit", {
+        event:  eventResult.value,
+        errors: [error.message],
+        fields: body,
+        session,
+        layout: isHtmx ? false : undefined,
       });
       return;
     }
 
-    res.redirect(`/events/${eventId}/edit`);
+    // Non-validation errors go to the error partial
+    res.status(this.mapEditErrorStatus(error)).render("partials/error", {
+      message: error.message,
+      layout: false,
+    });
+    return;
   }
+
+  // Success
+  if (isHtmx) {
+    res.set("HX-Redirect", `/events/${result.value.id}`);
+    res.status(200).end();
+  } else {
+    res.redirect(`/events/${result.value.id}`);
+  }
+}
 
   async publishEventFromForm(
     res: Response,
