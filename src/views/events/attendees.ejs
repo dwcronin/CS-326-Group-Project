@@ -51,9 +51,13 @@
             <tr>
               <td class="px-4 py-3 text-gray-900"><%= attendee.displayName %></td>
               <td class="px-4 py-3 text-gray-700"><%= attendee.email %></td>
-              <td class="px-4 py-3 text-gray-700"><%= attendee.rsvpStatus %></td>
               <td class="px-4 py-3 text-gray-700">
-                <%= attendee.rsvpCreatedAt.toLocaleString("en-US") %>
+                <span class="<%= attendee.rsvpStatus === 'going' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800' %> inline-flex rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide">
+                  <%= attendee.rsvpStatus %>
+                </span>
+              </td>
+              <td class="px-4 py-3 text-gray-700">
+                <%= attendee.rsvpCreatedAt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) %>
               </td>
             </tr>
           <% }) %>
