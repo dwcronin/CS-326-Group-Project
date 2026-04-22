@@ -126,10 +126,9 @@ describe("RSVP toggle endpoint", () => {
 
   // ── Auth and role errors ──────────────────────────────────────────
 
-  it("redirects to login when unauthenticated", async () => {
+  it("returns 401 when unauthenticated", async () => {
     const res = await request(expressApp).post("/events/event-1/rsvp");
-    expect(res.status).toBe(302);
-    expect(res.headers.location).toContain("/login");
+    expect(res.status).toBe(401);
   });
 
   it("returns 403 when an admin tries to RSVP", async () => {
