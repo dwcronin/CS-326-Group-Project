@@ -33,10 +33,13 @@
 
   <% if (attendees.length === 0) { %>
     <div class="rounded-md border border-gray-200 bg-white px-4 py-6 text-sm text-gray-600">
-      No active attendees yet.
+      No active attendees yet. Once members RSVP, they will appear here in arrival order.
     </div>
   <% } else { %>
     <div class="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+      <div class="border-b border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+        Showing active RSVP records only.
+      </div>
       <table class="min-w-full divide-y divide-gray-200 text-sm">
         <thead class="bg-gray-50">
           <tr>
