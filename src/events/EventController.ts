@@ -292,7 +292,7 @@ class EventController implements IEventController {
       fields,
     );
 
-    if (!result.ok) {
+    if (result.ok === false) {
       const error = this.toEditError(result);
 
       res.status(this.mapEditErrorStatus(error)).render("partials/error", {
