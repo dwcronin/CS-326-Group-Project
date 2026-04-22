@@ -1,0 +1,46 @@
+<div class="max-w-4xl mx-auto py-8 px-4">
+  <div class="mb-6 flex items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-medium text-gray-900">Attendee List</h1>
+      <p class="text-sm text-gray-600 mt-1">Event ID: <%= eventId %></p>
+    </div>
+
+    <a
+      href="/events/<%= eventId %>/edit"
+      class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 border border-gray-300 hover:bg-gray-50 no-underline"
+    >
+      Back to Edit Event
+    </a>
+  </div>
+
+  <% if (attendees.length === 0) { %>
+    <div class="rounded-md border border-gray-200 bg-white px-4 py-6 text-sm text-gray-600">
+      No active attendees yet.
+    </div>
+  <% } else { %>
+    <div class="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+      <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-3 text-left font-medium text-gray-700">Name</th>
+            <th class="px-4 py-3 text-left font-medium text-gray-700">Email</th>
+            <th class="px-4 py-3 text-left font-medium text-gray-700">Status</th>
+            <th class="px-4 py-3 text-left font-medium text-gray-700">Joined</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% attendees.forEach((attendee) => { %>
+            <tr>
+              <td class="px-4 py-3 text-gray-900"><%= attendee.displayName %></td>
+              <td class="px-4 py-3 text-gray-700"><%= attendee.email %></td>
+              <td class="px-4 py-3 text-gray-700"><%= attendee.rsvpStatus %></td>
+              <td class="px-4 py-3 text-gray-700">
+                <%= attendee.rsvpCreatedAt.toLocaleString("en-US") %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
