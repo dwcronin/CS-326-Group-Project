@@ -332,7 +332,7 @@ class EventController implements IEventController {
 
     if (user.role === "user") {
       res.status(403).render("partials/error", {
-        message: "You do not have permission to edit events.",
+        message: "Access denied.",
         layout: false,
       });
       return;
