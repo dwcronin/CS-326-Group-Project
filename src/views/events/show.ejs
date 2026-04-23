@@ -1,0 +1,53 @@
+<div class="max-w-3xl mx-auto py-8 px-4">
+  <div class="mb-6">
+    <h1 class="text-3xl font-semibold text-gray-900"><%= event.title %></h1>
+    <p class="text-sm text-gray-500 mt-2">
+      Status: <span class="font-medium text-gray-700"><%= event.status %></span>
+    </p>
+  </div>
+
+  <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm space-y-4">
+    <div>
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Description</h2>
+      <p class="text-gray-800 mt-1"><%= event.description %></p>
+    </div>
+
+    <div>
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Location</h2>
+      <p class="text-gray-800 mt-1"><%= event.location %></p>
+    </div>
+
+    <div>
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Category</h2>
+      <p class="text-gray-800 mt-1"><%= event.category %></p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Starts</h2>
+        <p class="text-gray-800 mt-1"><%= event.startDatetime.toLocaleString() %></p>
+      </div>
+
+      <div>
+        <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Ends</h2>
+        <p class="text-gray-800 mt-1"><%= event.endDatetime.toLocaleString() %></p>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Capacity</h2>
+      <p class="text-gray-800 mt-1">
+        <%= event.capacity !== undefined ? event.capacity : "No limit" %>
+      </p>
+    </div>
+  </div>
+
+  <div class="mt-6">
+    <a
+      href="/events"
+      class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 border border-gray-300 hover:bg-gray-50"
+    >
+      Back to Events
+    </a>
+  </div>
+</div>

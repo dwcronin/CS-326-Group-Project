@@ -12,6 +12,7 @@ import type {
   EventUpdateFields,
   EventEditError,
   EventStatusChangeError,
+  EventDetailError,
 } from "./Event";
 
 export interface IEventController {
@@ -24,6 +25,13 @@ export interface IEventController {
   createEventFromForm(
     res: Response,
     body: Record<string, string>,
+    session: IAppBrowserSession,
+    store: AppSessionStore,
+  ): Promise<void>;
+
+  showEventPage(
+    res: Response,
+    eventId: string,
     session: IAppBrowserSession,
     store: AppSessionStore,
   ): Promise<void>;
@@ -64,6 +72,10 @@ class EventController implements IEventController {
 
   private toStatusError(result: { value: unknown }): EventStatusChangeError {
     return result.value as EventStatusChangeError;
+  }
+
+  private toDetailError(result: { value: unknown }): EventDetailError {
+    return result.value as EventDetailError;
   }
 
   private mapCreateErrorStatus(error: EventCreateError): number {
@@ -192,11 +204,46 @@ class EventController implements IEventController {
         return;
       }
 
-      res.redirect("/events");
+      res.redirect(`/events/${createdEvent.id}`);
       return;
     }
 
     res.redirect(`/events/${createdEvent.id}/edit`);
+  }
+
+  async showEventPage(
+    res: Response,
+    eventId: string,
+    session: IAppBrowserSession,
+    _store: AppSessionStore,
+  ): Promise<void> {
+    const user = session.authenticatedUser;
+
+    if (!user) {
+      res.redirect("/login");
+      return;
+    }
+
+    const result = await this.service.getEventForView(
+      user.userId,
+      user.role,
+      eventId,
+    );
+
+    if (!result.ok) {
+      const error = this.toDetailError(result);
+
+      res.status(404).render("partials/error", {
+        message: error.message,
+        layout: false,
+      });
+      return;
+    }
+
+    res.render("events/show", {
+      event: result.value,
+      session,
+    });
   }
 
   async showEditForm(
@@ -375,7 +422,7 @@ class EventController implements IEventController {
       return;
     }
 
-    res.redirect("/events");
+    res.redirect(`/events/${eventId}`);
   }
 }
 

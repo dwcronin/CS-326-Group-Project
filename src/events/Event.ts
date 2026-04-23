@@ -1,36 +1,26 @@
 // src/events/Event.ts
 
-/**
- * The canonical Event object used across all features.
- * Features 1, 2, 3, 4, and 10 all depend on this shape.
- * Do not change field names without coordinating with teammates (see CONTRACTS.md).
- */
-
 export type EventStatus =
-  | "draft"       // created but not visible to members (Feature 1, 2)
-  | "published"   // visible and active, can be RSVPed/saved (Features 2, 4, 10, 14)
-  | "cancelled"   // soft-deleted, no edits/RSVPs allowed (Feature 3, 4, 14)
-  | "past";       // past event, no edits/RSVPs allowed (Feature 3)
+  | "draft"
+  | "published"
+  | "cancelled"
+  | "past";
 
 export interface Event {
-  id: string;                 // unique identifier, e.g. UUID
+  id: string;
   title: string;
   description: string;
   location: string;
   category: string;
   startDatetime: Date;
   endDatetime: Date;
-  capacity?: number;          // maximum attendees; no limit if absent
-  organizerId: string;        // matches User.id from the auth module
+  capacity?: number;
+  organizerId: string;
   status: EventStatus;
   createdAt: Date;
   updatedAt: Date;
 }
 
-/**
- * Input for creating a new event.
- * Organizer identity comes from the controller/session, not from the form.
- */
 export interface CreateEventInput {
   title: string;
   description: string;
@@ -41,11 +31,6 @@ export interface CreateEventInput {
   capacity?: number;
 }
 
-/**
- * The fields an organizer is allowed to change when editing.
- * All fields are optional — only the ones provided will be updated.
- * id, organizerId, status, createdAt are NOT editable through this type.
- */
 export interface EventUpdateFields {
   title?: string;
   description?: string;
@@ -63,9 +48,6 @@ export type EventCreateError =
   | { name: "InvalidCapacityError"; message: string }
   | { name: "NotAuthorisedError"; message: string };
 
-/**
- * The named errors for Feature 3, as agreed in CONTRACTS.md.
- */
 export type EventEditError =
   | { name: "EventNotFoundError"; message: string }
   | { name: "NotAuthorisedError"; message: string }
@@ -92,3 +74,6 @@ export type EventStatusChangeError =
 export type EventAttendeeListError =
   | { name: "EventNotFoundError"; message: string }
   | { name: "NotAuthorisedError"; message: string };
+
+export type EventDetailError =
+  | { name: "EventNotFoundError"; message: string };

@@ -11,6 +11,7 @@ import {
   EventStatusChangeError,
   EventAttendeeSummary,
   EventAttendeeListError,
+  EventDetailError,
 } from "./Event";
 import { EventRepository } from "./EventRepository";
 
@@ -92,6 +93,35 @@ export class EventService {
 
     const saved = await this.repo.save(event);
     return Ok(saved);
+  }
+
+  async getEventForView(
+    actingUserId: string,
+    actingUserRole: "admin" | "staff" | "user",
+    eventId: string
+  ): Promise<Result<Event, EventDetailError>> {
+    const event = await this.repo.findById(eventId);
+
+    if (!event) {
+      return Err({
+        name: "EventNotFoundError",
+        message: "Event not found.",
+      } as const);
+    }
+
+    if (event.status === "draft") {
+      const isAdmin = actingUserRole === "admin";
+      const isOrganizer = event.organizerId === actingUserId;
+
+      if (!isAdmin && !isOrganizer) {
+        return Err({
+          name: "EventNotFoundError",
+          message: "Event not found.",
+        } as const);
+      }
+    }
+
+    return Ok(event);
   }
 
   async updateEvent(

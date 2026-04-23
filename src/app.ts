@@ -271,6 +271,23 @@ class ExpressApp implements IApp {
       }),
     );
 
+    this.app.get(
+      "/events/:id",
+     asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+       }
+
+        const session = touchAppSession(req.session as AppSessionStore);
+        await this.eventController.showEventPage(
+         res,
+         String(req.params.id),
+         session,
+         req.session as AppSessionStore,
+        );
+      }),
+   );
+
     this.app.post(
       "/events",
       asyncHandler(async (req, res) => {
