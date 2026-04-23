@@ -4,16 +4,7 @@
 <div class="max-w-2xl mx-auto py-8 px-4">
   <h1 class="text-2xl font-medium text-gray-900 mb-6">Edit Event</h1>
 
-  <% if (event.status === "draft") { %>
-    <form method="POST" action="/events/<%= event.id %>/publish" class="mb-6">
-      <button
-        type="submit"
-        class="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-      >
-        Publish Event
-      </button>
-    </form>
-  <% } %>
+  <%- include("partials/lifecycle-panel", { event, session, errorMessage: lifecycleError ?? null, layout: false }) %>
 
   <% if (errors && errors.length > 0) { %>
     <div class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -143,4 +134,11 @@
       </a>
     </div>
   </form>
+  <%# Loading indicator — hidden by default, shown by HTMX while fetching attendees %>
+  <p id="attendee-loading" class="htmx-indicator mt-8 text-sm text-gray-500 opacity-0 transition-opacity">
+    Loading attendees…
+  </p>
+
+  <%# HTMX target: replaced with the attendee-list partial when the button is clicked %>
+  <section id="attendee-list-panel"></section>
 </div>
