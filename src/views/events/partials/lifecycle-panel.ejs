@@ -49,12 +49,16 @@
     <% } %>
 
     <% if (event.status !== "draft") { %>
-      <a
-        href="/events/<%= event.id %>/attendees"
-        class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 border border-gray-300 hover:bg-gray-50 no-underline"
+      <button
+        type="button"
+        hx-get="/events/<%= event.id %>/attendees"
+        hx-target="#attendee-list-panel"
+        hx-swap="outerHTML"
+        hx-indicator="#attendee-loading"
+        class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400"
       >
         View Attendees
-      </a>
+      </button>
     <% } %>
   </div>
 
