@@ -1,6 +1,8 @@
 import { EventService } from "../../src/events/EventService";
 import * as EventRepo from "../../src/events/InMemoryEventRepository";
 import type { Event } from "../../src/events/Event";
+import * as RsvpRepo from "../../src/rsvp/InMemoryRsvpRepository";
+import type { Rsvp } from "../../src/rsvp/Rsvp";
 
 // Helper to create a valid base event — lets each test override only what it needs
 function makeEvent(overrides: Partial<Event> = {}): Event {
@@ -21,12 +23,24 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
   };
 }
 
+function makeRsvp(overrides: Partial<Rsvp> = {}): Rsvp {
+  return {
+    id: "rsvp-1",
+    eventId: "event-1",
+    userId: "user-1",
+    status: "going",
+    createdAt: new Date("2026-04-01T17:00:00.000Z"),
+    ...overrides,
+  };
+}
+
 describe("EventService", () => {
   let service: EventService;
 
   beforeEach(async () => {
     // Start each test with a clean store and a fresh service instance
     EventRepo._clearForTesting();
+    RsvpRepo._clearForTesting();
     service = new EventService(EventRepo);
 
     // Pre-load a base event so tests don't have to repeat this
@@ -147,6 +161,89 @@ describe("EventService", () => {
       });
       expect(result.ok).toBe(false);
       if (!result.ok) expect(result.value.name).toBe("EventNotEditableError");
+    });
+  });
+
+  describe("changeEventStatus", () => {
+    it("publishes a draft event for the organizer", async () => {
+      await EventRepo.save(makeEvent({ id: "event-draft", status: "draft" }));
+
+      const result = await service.changeEventStatus(
+        "organizer-1",
+        "staff",
+        "event-draft",
+        "published",
+      );
+
+      expect(result.ok).toBe(true);
+      if (result.ok) expect(result.value.status).toBe("published");
+    });
+
+    it("returns InvalidEventStatusError for an unsupported transition", async () => {
+      await EventRepo.save(makeEvent({ id: "event-draft", status: "draft" }));
+
+      const result = await service.changeEventStatus(
+        "organizer-1",
+        "staff",
+        "event-draft",
+        "cancelled",
+      );
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.value.name).toBe("InvalidEventStatusError");
+    });
+
+    it("returns NotAuthorisedError when another staff member changes status", async () => {
+      await EventRepo.save(makeEvent({ id: "event-draft", status: "draft" }));
+
+      const result = await service.changeEventStatus(
+        "other-staff",
+        "staff",
+        "event-draft",
+        "published",
+      );
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.value.name).toBe("NotAuthorisedError");
+    });
+  });
+
+  describe("listEventAttendees", () => {
+    it("returns attendees sorted with going before waitlisted", async () => {
+      await RsvpRepo.save(
+        makeRsvp({
+          id: "rsvp-going",
+          eventId: "event-1",
+          userId: "user-reader",
+          status: "going",
+          createdAt: new Date("2026-04-02T17:00:00.000Z"),
+        }),
+      );
+      await RsvpRepo.save(
+        makeRsvp({
+          id: "rsvp-waitlisted",
+          eventId: "event-1",
+          userId: "user-admin",
+          status: "waitlisted",
+          createdAt: new Date("2026-04-01T17:00:00.000Z"),
+        }),
+      );
+
+      const result = await service.listEventAttendees("organizer-1", "staff", "event-1");
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value).toHaveLength(2);
+        expect(result.value[0].rsvpStatus).toBe("going");
+        expect(result.value[1].rsvpStatus).toBe("waitlisted");
+      }
+    });
+
+    it("returns NotAuthorisedError when a non-organizer staff member requests attendees", async () => {
+      const result = await service.listEventAttendees("other-staff", "staff", "event-1");
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.value.name).toBe("NotAuthorisedError");
     });
   });
 });
