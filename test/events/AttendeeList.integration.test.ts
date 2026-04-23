@@ -77,4 +77,33 @@ describe("Feature 12 — Attendee List (Sprint 2)", () => {
       expect(res.text).not.toContain("<html");
     });
   });
-});
+
+  describe("unauthorised access", () => {
+    it("returns 403 when a member (user role) requests the attendee list", async () => {
+      await EventRepo.save(makeEvent());
+      const app = createComposedApp().getExpressApp();
+      const agent = request.agent(app);
+      await loginAs("user@app.test", agent);
+
+      await agent.get("/events/event-1/attendees").expect(403);
+    });
+
+    it("returns 403 when a staff member who is not the organizer requests the list", async () => {
+      await EventRepo.save(makeEvent({ organizerId: "user-admin" }));
+      const app = createComposedApp().getExpressApp();
+      const agent = request.agent(app);
+      await loginAs("staff@app.test", agent);
+
+      const res = await agent.get("/events/event-1/attendees").expect(403);
+
+      expect(res.text).toContain("Access denied.");
+    });
+
+    it("redirects unauthenticated visitors to /login", async () => {
+      await EventRepo.save(makeEvent());
+      const app = createComposedApp().getExpressApp();
+
+      await request(app).get("/events/event-1/attendees").expect(302);
+    });
+  });
+    });
