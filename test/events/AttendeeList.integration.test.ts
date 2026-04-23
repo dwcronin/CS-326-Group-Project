@@ -106,4 +106,73 @@ describe("Feature 12 — Attendee List (Sprint 2)", () => {
       await request(app).get("/events/event-1/attendees").expect(302);
     });
   });
+
+  describe("grouping and sorting", () => {
+    it("lists going attendees before waitlisted attendees", async () => {
+      await EventRepo.save(makeEvent());
+      await RsvpRepo.save({
+        id: "rsvp-waitlisted",
+        eventId: "event-1",
+        userId: "user-admin",
+        status: "waitlisted",
+        createdAt: new Date("2026-05-10T08:00:00.000Z"),
+      });
+      await RsvpRepo.save({
+        id: "rsvp-going",
+        eventId: "event-1",
+        userId: "user-reader",
+        status: "going",
+        createdAt: new Date("2026-05-10T09:00:00.000Z"),
+      });
+
+      const app = createComposedApp().getExpressApp();
+      const agent = request.agent(app);
+      await loginAs("staff@app.test", agent);
+
+      const res = await agent.get("/events/event-1/attendees").expect(200);
+
+      const goingIdx = res.text.indexOf("going");
+      const waitlistedIdx = res.text.indexOf("waitlisted");
+      expect(goingIdx).toBeLessThan(waitlistedIdx);
     });
+
+    it("shows an empty-state message when no one has RSVPed", async () => {
+      await EventRepo.save(makeEvent());
+      const app = createComposedApp().getExpressApp();
+      const agent = request.agent(app);
+      await loginAs("staff@app.test", agent);
+
+      const res = await agent.get("/events/event-1/attendees").expect(200);
+
+      expect(res.text).toContain("No active attendees yet.");
+    });
+
+    it("does not list cancelled RSVPs in the attendee table", async () => {
+      await EventRepo.save(makeEvent());
+      await RsvpRepo.save({
+        id: "rsvp-cancelled",
+        eventId: "event-1",
+        userId: "user-reader",
+        status: "cancelled",
+        createdAt: new Date("2026-05-10T08:00:00.000Z"),
+      });
+
+      const app = createComposedApp().getExpressApp();
+      const agent = request.agent(app);
+      await loginAs("staff@app.test", agent);
+
+      const res = await agent.get("/events/event-1/attendees").expect(200);
+
+      expect(res.text).toContain("No active attendees yet.");
+    });
+  });
+
+  it("returns 404 when the event does not exist", async () => {
+    const app = createComposedApp().getExpressApp();
+    const agent = request.agent(app);
+    await loginAs("admin@app.test", agent);
+
+    await agent.get("/events/no-such-event/attendees").expect(404);
+  });
+});
+  
