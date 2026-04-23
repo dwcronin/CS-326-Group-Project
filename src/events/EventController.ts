@@ -7,10 +7,13 @@ import type {
 } from "../session/AppSession.js";
 import type { EventService } from "./EventService";
 import type {
+  Event,
   CreateEventInput,
   EventCreateError,
   EventUpdateFields,
   EventEditError,
+  EventAttendeeListError,
+  EventAttendeeSummary,
   EventStatusChangeError,
 } from "./Event";
 
@@ -49,10 +52,29 @@ export interface IEventController {
     session: IAppBrowserSession,
     store: AppSessionStore,
   ): Promise<void>;
+
+  changeStatusFromForm(
+    res: Response,
+    eventId: string,
+    body: Record<string, string>,
+    session: IAppBrowserSession,
+    store: AppSessionStore,
+  ): Promise<void>;
+
+  showAttendeeList(
+    res: Response,
+    eventId: string,
+    session: IAppBrowserSession,
+    store: AppSessionStore,
+  ): Promise<void>;
 }
 
 class EventController implements IEventController {
   constructor(private readonly service: EventService) {}
+
+  private isHtmxRequest(res: Response): boolean {
+    return res.req.get("HX-Request") === "true";
+  }
 
   private toCreateError(result: { value: unknown }): EventCreateError {
     return result.value as EventCreateError;
@@ -64,6 +86,10 @@ class EventController implements IEventController {
 
   private toStatusError(result: { value: unknown }): EventStatusChangeError {
     return result.value as EventStatusChangeError;
+  }
+
+  private toAttendeeListError(result: { value: unknown }): EventAttendeeListError {
+    return result.value as EventAttendeeListError;
   }
 
   private mapCreateErrorStatus(error: EventCreateError): number {
@@ -91,6 +117,39 @@ class EventController implements IEventController {
     if (error.name === "NotAuthorisedError") return 403;
     if (error.name === "InvalidEventStatusError") return 422;
     return 500;
+  }
+
+  private mapAttendeeListErrorStatus(error: EventAttendeeListError): number {
+    if (error.name === "EventNotFoundError") return 404;
+    if (error.name === "NotAuthorisedError") return 403;
+    return 500;
+  }
+
+  private renderAttendeeList(
+    res: Response,
+    eventId: string,
+    attendees: EventAttendeeSummary[],
+    session: IAppBrowserSession,
+  ): void {
+    res.render("events/attendees", {
+      attendees,
+      eventId,
+      session,
+    });
+  }
+
+  private renderLifecyclePanel(
+    res: Response,
+    event: Event,
+    session: IAppBrowserSession,
+    errorMessage?: string,
+  ): void {
+    res.render("events/partials/lifecycle-panel", {
+      event,
+      errorMessage: errorMessage ?? null,
+      session,
+      layout: false,
+    });
   }
 
   async showCreateForm(
@@ -240,6 +299,7 @@ class EventController implements IEventController {
       event: result.value,
       errors: [],
       fields: {},
+      lifecycleError: null,
       session,
     });
   }
@@ -294,6 +354,37 @@ class EventController implements IEventController {
 
     if (!result.ok) {
       const error = this.toEditError(result);
+      const isValidationError =
+        error.name === "InvalidTitleError" ||
+        error.name === "InvalidDescriptionError" ||
+        error.name === "InvalidDateError" ||
+        error.name === "InvalidCapacityError";
+
+      if (isValidationError) {
+        const eventResult = await this.service.getEventForEdit(
+          user.userId,
+          user.role,
+          eventId,
+        );
+
+        if (!eventResult.ok) {
+          const eventError = this.toEditError(eventResult);
+          res.status(this.mapEditErrorStatus(eventError)).render("partials/error", {
+            message: eventError.message,
+            layout: false,
+          });
+          return;
+        }
+
+        res.status(422).render("events/edit", {
+          event: eventResult.value,
+          errors: [error.message],
+          fields: body,
+          lifecycleError: null,
+          session,
+        });
+        return;
+      }
 
       const isValidationError =
         error.name === "InvalidTitleError" ||
@@ -334,7 +425,7 @@ class EventController implements IEventController {
       return;
     }
 
-    res.redirect(`/events/${eventId}/edit`);
+    res.redirect(`/events/${result.value.id}/edit`);
   }
 
   async publishEventFromForm(
@@ -376,6 +467,142 @@ class EventController implements IEventController {
     }
 
     res.redirect("/events");
+  }
+
+  async changeStatusFromForm(
+    res: Response,
+    eventId: string,
+    body: Record<string, string>,
+    session: IAppBrowserSession,
+    _store: AppSessionStore,
+  ): Promise<void> {
+    const user = session.authenticatedUser;
+
+    if (!user) {
+      res.redirect("/login");
+      return;
+    }
+
+    if (user.role === "user") {
+      res.status(403).render("partials/error", {
+        message: "You do not have permission to change event status.",
+        layout: false,
+      });
+      return;
+    }
+
+    const nextStatus = body.status;
+    if (nextStatus !== "published" && nextStatus !== "cancelled") {
+      if (this.isHtmxRequest(res)) {
+        const currentEventResult = await this.service.getEventForEdit(
+          user.userId,
+          user.role,
+          eventId,
+        );
+
+        if (!currentEventResult.ok) {
+          const error = this.toEditError(currentEventResult);
+          res.status(this.mapEditErrorStatus(error)).render("partials/error", {
+            message: error.message,
+            layout: false,
+          });
+          return;
+        }
+
+        res.status(422);
+        this.renderLifecyclePanel(
+          res,
+          currentEventResult.value,
+          session,
+          "Invalid status transition.",
+        );
+        return;
+      }
+
+      res.status(422).render("partials/error", {
+        message: "Invalid status transition.",
+        layout: false,
+      });
+      return;
+    }
+
+    const result = await this.service.changeEventStatus(
+      user.userId,
+      user.role,
+      eventId,
+      nextStatus,
+    );
+
+    if (!result.ok) {
+      const error = this.toStatusError(result);
+
+      if (this.isHtmxRequest(res) && error.name !== "EventNotFoundError") {
+        const currentEventResult = await this.service.getEventForEdit(
+          user.userId,
+          user.role,
+          eventId,
+        );
+
+        if (currentEventResult.ok) {
+          res.status(this.mapStatusErrorStatus(error));
+          this.renderLifecyclePanel(res, currentEventResult.value, session, error.message);
+          return;
+        }
+      }
+
+      res.status(this.mapStatusErrorStatus(error)).render("partials/error", {
+        message: error.message,
+        layout: false,
+      });
+      return;
+    }
+
+    if (this.isHtmxRequest(res)) {
+      this.renderLifecyclePanel(res, result.value, session);
+      return;
+    }
+
+    res.redirect(`/events/${eventId}/edit`);
+  }
+
+  async showAttendeeList(
+    res: Response,
+    eventId: string,
+    session: IAppBrowserSession,
+    _store: AppSessionStore,
+  ): Promise<void> {
+    const user = session.authenticatedUser;
+
+    if (!user) {
+      res.redirect("/login");
+      return;
+    }
+
+    if (user.role === "user") {
+      res.status(403).render("partials/error", {
+        message: "You do not have permission to view attendee lists.",
+        layout: false,
+      });
+      return;
+    }
+
+    const result = await this.service.listEventAttendees(
+      user.userId,
+      user.role,
+      eventId,
+    );
+
+    if (!result.ok) {
+      const error = this.toAttendeeListError(result);
+
+      res.status(this.mapAttendeeListErrorStatus(error)).render("partials/error", {
+        message: error.message,
+        layout: false,
+      });
+      return;
+    }
+
+    this.renderAttendeeList(res, eventId, result.value, session);
   }
 }
 
