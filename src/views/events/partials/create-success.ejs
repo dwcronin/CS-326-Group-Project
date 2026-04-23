@@ -1,0 +1,31 @@
+<div class="rounded-lg border border-green-200 bg-green-50 p-6">
+  <h2 class="text-lg font-semibold text-green-800 mb-2">Success</h2>
+  <p class="text-sm text-green-700 mb-4"><%= message %></p>
+
+  <div class="flex gap-3 flex-wrap">
+    <% if (mode === "draft") { %>
+      <a
+        href="/events/<%= event.id %>/edit"
+        class="px-4 py-2 rounded-md text-sm font-medium bg-white text-gray-800 border border-gray-300 hover:bg-gray-50"
+      >
+        Edit Draft
+      </a>
+    <% } %>
+
+    <% if (mode === "published") { %>
+      <a
+        href="/events/<%= event.id %>"
+        class="px-4 py-2 rounded-md text-sm font-medium bg-white text-gray-800 border border-gray-300 hover:bg-gray-50"
+      >
+        View Event
+      </a>
+    <% } %>
+
+    <a
+      href="/events/new"
+      class="px-4 py-2 rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-700"
+    >
+      Create Another Event
+    </a>
+  </div>
+</div>
