@@ -124,7 +124,10 @@ class EventController implements IEventController {
     if (error.name === "NotAuthorisedError") return 403;
     return 500;
   }
-
+ /**
+   * Renders the attendee list — returns a layout-less HTMX fragment
+   * for inline requests, or the full attendees page for direct navigation.
+   */
   private renderAttendeeList(
     res: Response,
     eventId: string,
