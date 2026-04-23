@@ -27,6 +27,16 @@ export interface Event {
   updatedAt: Date;
 }
 
+export interface CreateEventInput {
+  title: string;
+  description: string;
+  location: string;
+  category: string;
+  startDatetime: Date;
+  endDatetime: Date;
+  capacity?: number;
+}
+
 /**
  * The fields an organizer is allowed to change when editing.
  * All fields are optional — only the ones provided will be updated.
@@ -49,6 +59,13 @@ export type EventEditError =
   | { name: "EventNotFoundError"; message: string }
   | { name: "NotAuthorisedError"; message: string }
   | { name: "EventNotEditableError"; message: string }
+  | { name: "InvalidTitleError"; message: string }
+  | { name: "InvalidDescriptionError"; message: string }
+  | { name: "InvalidDateError"; message: string }
+  | { name: "InvalidCapacityError"; message: string };
+
+export type EventCreateError =
+  | { name: "NotAuthorisedError"; message: string }
   | { name: "InvalidTitleError"; message: string }
   | { name: "InvalidDescriptionError"; message: string }
   | { name: "InvalidDateError"; message: string }
