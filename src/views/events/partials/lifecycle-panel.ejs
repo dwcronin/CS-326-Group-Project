@@ -1,0 +1,56 @@
+<section id="event-lifecycle-panel" class="mb-6 space-y-4">
+  <div class="flex flex-wrap items-center gap-3">
+    <span class="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700">
+      Status: <%= event.status %>
+    </span>
+
+    <% if (event.status === "draft") { %>
+      <form
+        method="POST"
+        action="/events/<%= event.id %>/status"
+        hx-post="/events/<%= event.id %>/status"
+        hx-target="#event-lifecycle-panel"
+        hx-swap="outerHTML"
+      >
+        <input type="hidden" name="status" value="published" />
+        <button
+          type="submit"
+          class="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+        >
+          Publish Event
+        </button>
+      </form>
+    <% } %>
+
+    <% if (event.status === "published") { %>
+      <form
+        method="POST"
+        action="/events/<%= event.id %>/status"
+        hx-post="/events/<%= event.id %>/status"
+        hx-target="#event-lifecycle-panel"
+        hx-swap="outerHTML"
+      >
+        <input type="hidden" name="status" value="cancelled" />
+        <button
+          type="submit"
+          class="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+        >
+          Cancel Event
+        </button>
+      </form>
+    <% } %>
+
+    <% if (event.status !== "draft") { %>
+      <a
+        href="/events/<%= event.id %>/attendees"
+        class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 border border-gray-300 hover:bg-gray-50 no-underline"
+      >
+        View Attendees
+      </a>
+    <% } %>
+  </div>
+
+  <% if (errorMessage) { %>
+    <%- include("../../partials/error", { message: errorMessage }) %>
+  <% } %>
+</section>
