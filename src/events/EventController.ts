@@ -71,7 +71,7 @@ export interface IEventController {
 
 class EventController implements IEventController {
   constructor(private readonly service: EventService) {}
-
+ 
   private isHtmxRequest(res: Response): boolean {
     return res.req.get("HX-Request") === "true";
   }
@@ -131,13 +131,22 @@ class EventController implements IEventController {
     attendees: EventAttendeeSummary[],
     session: IAppBrowserSession,
   ): void {
+    if (this.isHtmxRequest(res)) {
+      res.render("events/partials/attendee-list", {
+        attendees,
+        eventId,
+        session,
+        layout: false,
+      });
+      return;
+    }
     res.render("events/attendees", {
       attendees,
       eventId,
       session,
     });
   }
-
+ 
   private renderLifecyclePanel(
     res: Response,
     event: Event,
@@ -359,14 +368,14 @@ class EventController implements IEventController {
         error.name === "InvalidDescriptionError" ||
         error.name === "InvalidDateError" ||
         error.name === "InvalidCapacityError";
-
+ 
       if (isValidationError) {
         const eventResult = await this.service.getEventForEdit(
           user.userId,
           user.role,
           eventId,
         );
-
+ 
         if (!eventResult.ok) {
           const eventError = this.toEditError(eventResult);
           res.status(this.mapEditErrorStatus(eventError)).render("partials/error", {
@@ -375,7 +384,7 @@ class EventController implements IEventController {
           });
           return;
         }
-
+ 
         res.status(422).render("events/edit", {
           event: eventResult.value,
           errors: [error.message],
@@ -385,46 +394,14 @@ class EventController implements IEventController {
         });
         return;
       }
-
-      const isValidationError =
-        error.name === "InvalidTitleError" ||
-        error.name === "InvalidDescriptionError" ||
-        error.name === "InvalidDateError" ||
-        error.name === "InvalidCapacityError";
-
-      if (isValidationError) {
-        const eventResult = await this.service.getEventForEdit(
-          user.userId,
-          user.role,
-          eventId,
-        );
-
-        if (!eventResult.ok) {
-          const eventError = this.toEditError(eventResult);
-
-          res.status(this.mapEditErrorStatus(eventError)).render("partials/error", {
-            message: eventError.message,
-            layout: false,
-          });
-          return;
-        }
-
-        res.status(422).render("events/edit", {
-          event: eventResult.value,
-          errors: [error.message],
-          fields: body,
-          session,
-        });
-        return;
-      }
-
+ 
       res.status(this.mapEditErrorStatus(error)).render("partials/error", {
         message: error.message,
         layout: false,
       });
       return;
     }
-
+ 
     res.redirect(`/events/${result.value.id}/edit`);
   }
 
@@ -499,7 +476,7 @@ class EventController implements IEventController {
           user.role,
           eventId,
         );
-
+ 
         if (!currentEventResult.ok) {
           const error = this.toEditError(currentEventResult);
           res.status(this.mapEditErrorStatus(error)).render("partials/error", {
@@ -508,7 +485,7 @@ class EventController implements IEventController {
           });
           return;
         }
-
+ 
         res.status(422);
         this.renderLifecyclePanel(
           res,
@@ -518,7 +495,7 @@ class EventController implements IEventController {
         );
         return;
       }
-
+ 
       res.status(422).render("partials/error", {
         message: "Invalid status transition.",
         layout: false,
@@ -535,33 +512,33 @@ class EventController implements IEventController {
 
     if (!result.ok) {
       const error = this.toStatusError(result);
-
+ 
       if (this.isHtmxRequest(res) && error.name !== "EventNotFoundError") {
         const currentEventResult = await this.service.getEventForEdit(
           user.userId,
           user.role,
           eventId,
         );
-
+ 
         if (currentEventResult.ok) {
           res.status(this.mapStatusErrorStatus(error));
           this.renderLifecyclePanel(res, currentEventResult.value, session, error.message);
           return;
         }
       }
-
+ 
       res.status(this.mapStatusErrorStatus(error)).render("partials/error", {
         message: error.message,
         layout: false,
       });
       return;
     }
-
+ 
     if (this.isHtmxRequest(res)) {
       this.renderLifecyclePanel(res, result.value, session);
       return;
     }
-
+ 
     res.redirect(`/events/${eventId}/edit`);
   }
 
@@ -609,3 +586,4 @@ class EventController implements IEventController {
 export function CreateEventController(service: EventService): IEventController {
   return new EventController(service);
 }
+ 
