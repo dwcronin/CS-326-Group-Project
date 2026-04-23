@@ -43,6 +43,7 @@ export interface IEventController {
     body: Record<string, string>,
     session: IAppBrowserSession,
     store: AppSessionStore,
+    isHtmx: boolean,
   ): Promise<void>;
 
   publishEventFromForm(
@@ -266,7 +267,7 @@ class EventController implements IEventController {
       eventId,
     );
 
-    if (!result.ok) {
+    if (result.ok === false) {
       const error = this.toEditError(result);
 
       res.status(this.mapEditErrorStatus(error)).render("partials/error", {
@@ -284,12 +285,14 @@ class EventController implements IEventController {
     });
   }
 
+
   async updateEventFromForm(
     res: Response,
     eventId: string,
     body: Record<string, string>,
     session: IAppBrowserSession,
     _store: AppSessionStore,
+    isHtmx: boolean,
   ): Promise<void> {
     const user = session.authenticatedUser;
 
@@ -332,7 +335,7 @@ class EventController implements IEventController {
       fields,
     );
 
-    if (!result.ok) {
+    if (result.ok === false) {
       const error = this.toEditError(result);
 
       const isValidationError =
@@ -349,10 +352,10 @@ class EventController implements IEventController {
         );
 
         if (!eventResult.ok) {
-          const eventError = this.toEditError(eventResult);
+          const fetchError = this.toEditError(eventResult);
 
-          res.status(this.mapEditErrorStatus(eventError)).render("partials/error", {
-            message: eventError.message,
+          res.status(this.mapEditErrorStatus(fetchError)).render("partials/error", {
+            message: fetchError.message,
             layout: false,
           });
           return;
@@ -360,9 +363,10 @@ class EventController implements IEventController {
 
         res.status(422).render("events/edit", {
           event: eventResult.value,
-          errors: [error.message],
+          errors: [result.value.message],
           fields: body,
           session,
+          layout: isHtmx ? false : undefined,
         });
         return;
       }
@@ -374,7 +378,12 @@ class EventController implements IEventController {
       return;
     }
 
-    res.redirect(`/events/${eventId}/edit`);
+    if (isHtmx) {
+      res.set("HX-Redirect", `/events/${result.value.id}`);
+      res.status(200).end();
+    } else {
+      res.redirect(`/events/${result.value.id}`);
+    }
   }
 
   async publishEventFromForm(
@@ -405,7 +414,7 @@ class EventController implements IEventController {
       "published",
     );
 
-    if (!result.ok) {
+    if (result.ok === false) {
       const error = this.toStatusError(result);
 
       res.status(this.mapStatusErrorStatus(error)).render("partials/error", {
