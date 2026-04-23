@@ -11,6 +11,8 @@ import type {
   EventCreateError,
   EventUpdateFields,
   EventEditError,
+  EventAttendeeListError,
+  EventAttendeeSummary,
   EventStatusChangeError,
 } from "./Event";
 
@@ -49,6 +51,21 @@ export interface IEventController {
     session: IAppBrowserSession,
     store: AppSessionStore,
   ): Promise<void>;
+
+  changeStatusFromForm(
+    res: Response,
+    eventId: string,
+    body: Record<string, string>,
+    session: IAppBrowserSession,
+    store: AppSessionStore,
+  ): Promise<void>;
+
+  showAttendeeList(
+    res: Response,
+    eventId: string,
+    session: IAppBrowserSession,
+    store: AppSessionStore,
+  ): Promise<void>;
 }
 
 class EventController implements IEventController {
@@ -64,6 +81,10 @@ class EventController implements IEventController {
 
   private toStatusError(result: { value: unknown }): EventStatusChangeError {
     return result.value as EventStatusChangeError;
+  }
+
+  private toAttendeeListError(result: { value: unknown }): EventAttendeeListError {
+    return result.value as EventAttendeeListError;
   }
 
   private mapCreateErrorStatus(error: EventCreateError): number {
@@ -91,6 +112,25 @@ class EventController implements IEventController {
     if (error.name === "NotAuthorisedError") return 403;
     if (error.name === "InvalidEventStatusError") return 422;
     return 500;
+  }
+
+  private mapAttendeeListErrorStatus(error: EventAttendeeListError): number {
+    if (error.name === "EventNotFoundError") return 404;
+    if (error.name === "NotAuthorisedError") return 403;
+    return 500;
+  }
+
+  private renderAttendeeList(
+    res: Response,
+    eventId: string,
+    attendees: EventAttendeeSummary[],
+    session: IAppBrowserSession,
+  ): void {
+    res.render("events/attendees", {
+      attendees,
+      eventId,
+      session,
+    });
   }
 
   async showCreateForm(
@@ -376,6 +416,97 @@ class EventController implements IEventController {
     }
 
     res.redirect("/events");
+  }
+
+  async changeStatusFromForm(
+    res: Response,
+    eventId: string,
+    body: Record<string, string>,
+    session: IAppBrowserSession,
+    _store: AppSessionStore,
+  ): Promise<void> {
+    const user = session.authenticatedUser;
+
+    if (!user) {
+      res.redirect("/login");
+      return;
+    }
+
+    if (user.role === "user") {
+      res.status(403).render("partials/error", {
+        message: "You do not have permission to change event status.",
+        layout: false,
+      });
+      return;
+    }
+
+    const nextStatus = body.status;
+    if (nextStatus !== "published" && nextStatus !== "cancelled") {
+      res.status(422).render("partials/error", {
+        message: "Invalid status transition.",
+        layout: false,
+      });
+      return;
+    }
+
+    const result = await this.service.changeEventStatus(
+      user.userId,
+      user.role,
+      eventId,
+      nextStatus,
+    );
+
+    if (!result.ok) {
+      const error = this.toStatusError(result);
+
+      res.status(this.mapStatusErrorStatus(error)).render("partials/error", {
+        message: error.message,
+        layout: false,
+      });
+      return;
+    }
+
+    res.redirect(`/events/${eventId}/edit`);
+  }
+
+  async showAttendeeList(
+    res: Response,
+    eventId: string,
+    session: IAppBrowserSession,
+    _store: AppSessionStore,
+  ): Promise<void> {
+    const user = session.authenticatedUser;
+
+    if (!user) {
+      res.redirect("/login");
+      return;
+    }
+
+    if (user.role === "user") {
+      res.status(403).render("partials/error", {
+        message: "You do not have permission to view attendee lists.",
+        layout: false,
+      });
+      return;
+    }
+
+    const result = await this.service.listEventAttendees(
+      user.userId,
+      user.role,
+      eventId,
+    );
+
+    if (!result.ok) {
+      const error = this.toAttendeeListError(result);
+
+      res.status(this.mapAttendeeListErrorStatus(error)).render("partials/error", {
+        message: error.message,
+        layout: false,
+      });
+      return;
+    }
+
+    this.renderAttendeeList(res, eventId, result.value, session);
   }
 }
 
