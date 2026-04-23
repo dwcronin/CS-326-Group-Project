@@ -305,6 +305,24 @@ class ExpressApp implements IApp {
       }),
     );
 
+    this.app.post(
+      "/events/:id/status",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const session = touchAppSession(req.session as AppSessionStore);
+        await this.eventController.changeStatusFromForm(
+          res,
+          String(req.params.id),
+          req.body as Record<string, string>,
+          session,
+          req.session as AppSessionStore,
+        );
+      }),
+    );
+
     this.app.get(
       "/events/:id/edit",
       asyncHandler(async (req, res) => {
@@ -337,6 +355,23 @@ class ExpressApp implements IApp {
           session,
           req.session as AppSessionStore,
           this.isHtmxRequest(req),
+        );
+      }),
+    );
+
+    this.app.get(
+      "/events/:id/attendees",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const session = touchAppSession(req.session as AppSessionStore);
+        await this.eventController.showAttendeeList(
+          res,
+          String(req.params.id),
+          session,
+          req.session as AppSessionStore,
         );
       }),
     );
