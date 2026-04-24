@@ -38,6 +38,20 @@ export interface CreateEventInput {
 }
 
 /**
+ * Input for creating a new event.
+ * Organizer identity comes from the controller/session, not from the form.
+ */
+export interface CreateEventInput {
+  title: string;
+  description: string;
+  location: string;
+  category: string;
+  startDatetime: Date;
+  endDatetime: Date;
+  capacity?: number;
+}
+
+/**
  * The fields an organizer is allowed to change when editing.
  * All fields are optional — only the ones provided will be updated.
  * id, organizerId, status, createdAt are NOT editable through this type.
@@ -51,6 +65,13 @@ export interface EventUpdateFields {
   endDatetime?: Date;
   capacity?: number;
 }
+
+export type EventCreateError =
+  | { name: "InvalidTitleError"; message: string }
+  | { name: "InvalidDescriptionError"; message: string }
+  | { name: "InvalidDateError"; message: string }
+  | { name: "InvalidCapacityError"; message: string }
+  | { name: "NotAuthorisedError"; message: string };
 
 /**
  * The named errors for Feature 3, as agreed in CONTRACTS.md.
