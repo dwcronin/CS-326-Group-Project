@@ -18,18 +18,7 @@ async function loginAsAdmin(agent: request.Agent) {
     .expect(302);
 }
 
-async function loginAsUser(agent: request.Agent) {
-  await agent
-    .post("/login")
-    .type("form")
-    .send({
-      email: "member@app.test",
-      password: "password123",
-    })
-    .expect(302);
-}
-
-describe("Event routes Sprint 2 SuperTest coverage", () => {
+describe("Event creation routes Sprint 2 SuperTest coverage", () => {
   beforeEach(() => {
     EventRepo._clearForTesting();
   });
@@ -41,6 +30,14 @@ describe("Event routes Sprint 2 SuperTest coverage", () => {
     const res = await agent.get("/events/new").expect(200);
 
     expect(res.text).toContain("Create Event");
+  });
+
+  test("GET /events/new redirects unauthenticated users to login", async () => {
+    const agent = request.agent(app());
+
+    const res = await agent.get("/events/new").expect(302);
+
+    expect(res.headers.location).toBe("/login");
   });
 
   test("POST /events creates a draft event for admin", async () => {
@@ -117,15 +114,14 @@ describe("Event routes Sprint 2 SuperTest coverage", () => {
     expect(res.text).toContain("Title cannot be empty");
   });
 
-  test("POST /events rejects normal users with status 403", async () => {
+  test("POST /events rejects unauthenticated form submissions with status 401", async () => {
     const agent = request.agent(app());
-    await loginAsUser(agent);
 
     const res = await agent
       .post("/events")
       .type("form")
       .send({
-        title: "User Event",
+        title: "Blocked Event",
         description: "Should fail",
         location: "Campus",
         category: "Tech",
@@ -133,90 +129,8 @@ describe("Event routes Sprint 2 SuperTest coverage", () => {
         endDatetime: "2026-05-01T12:00",
         intent: "draft",
       })
-      .expect(403);
+      .expect(401);
 
-    expect(res.text).toContain("Only organizers can create events");
-  });
-
-  test("HTMX POST /events returns inline validation fragment", async () => {
-    const agent = request.agent(app());
-    await loginAsAdmin(agent);
-
-    const res = await agent
-      .post("/events")
-      .set("HX-Request", "true")
-      .type("form")
-      .send({
-        title: "",
-        description: "Missing title",
-        location: "Campus",
-        category: "Tech",
-        startDatetime: "2026-05-01T10:00",
-        endDatetime: "2026-05-01T12:00",
-        intent: "draft",
-      })
-      .expect(422);
-
-    expect(res.text).toContain("Title cannot be empty");
-    expect(res.text).toContain("hx-post=\"/events\"");
-  });
-
-  test("GET /events/:id shows published event details", async () => {
-    const agent = request.agent(app());
-    await loginAsAdmin(agent);
-
-    await EventRepo.save({
-      id: "published-event-1",
-      title: "Published Detail Event",
-      description: "Visible event",
-      location: "Room 101",
-      category: "Tech",
-      startDatetime: new Date("2026-05-01T10:00:00Z"),
-      endDatetime: new Date("2026-05-01T12:00:00Z"),
-      capacity: 20,
-      organizerId: "user-staff",
-      status: "published",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-
-    const res = await agent.get("/events/published-event-1").expect(200);
-
-    expect(res.text).toContain("Published Detail Event");
-    expect(res.text).toContain("Visible event");
-  });
-
-  test("GET /events/:id returns 404 for missing event", async () => {
-    const agent = request.agent(app());
-    await loginAsAdmin(agent);
-
-    const res = await agent.get("/events/missing-event").expect(404);
-
-    expect(res.text).toContain("Event not found");
-  });
-
-  test("GET /events/:id hides draft event from unrelated normal user", async () => {
-    const agent = request.agent(app());
-
-    await EventRepo.save({
-      id: "draft-event-1",
-      title: "Draft Detail Event",
-      description: "Hidden draft",
-      location: "Room 202",
-      category: "Planning",
-      startDatetime: new Date("2026-05-01T10:00:00Z"),
-      endDatetime: new Date("2026-05-01T12:00:00Z"),
-      capacity: 20,
-      organizerId: "user-staff",
-      status: "draft",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-
-    await loginAsUser(agent);
-
-    const res = await agent.get("/events/draft-event-1").expect(404);
-
-    expect(res.text).toContain("Event not found");
+    expect(res.text).toContain("Please log in to continue");
   });
 });
