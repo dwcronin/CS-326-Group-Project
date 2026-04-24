@@ -114,6 +114,9 @@ class EventController implements IEventController {
     return 500;
   }
 
+  private isHtmxRequest(res: Response): boolean {
+    return res.req.get("HX-Request") === "true";
+  }
   private mapAttendeeListErrorStatus(error: EventAttendeeListError): number {
     if (error.name === "EventNotFoundError") return 404;
     if (error.name === "NotAuthorisedError") return 403;
@@ -167,6 +170,7 @@ class EventController implements IEventController {
     _store: AppSessionStore,
   ): Promise<void> {
     const user = session.authenticatedUser;
+    const isHtmx = this.isHtmxRequest(res);
 
     if (!user) {
       res.redirect("/login");
@@ -203,6 +207,18 @@ class EventController implements IEventController {
     if (!createResult.ok) {
       const error = this.toCreateError(createResult);
 
+      if (isHtmx) {
+        res.status(this.mapCreateErrorStatus(error)).render(
+          "events/partials/create-form",
+          {
+            errors: [error.message],
+            fields: body,
+            layout: false,
+          },
+        );
+        return;
+      }
+
       res.status(this.mapCreateErrorStatus(error)).render("events/new", {
         errors: [error.message],
         fields: body,
@@ -232,7 +248,27 @@ class EventController implements IEventController {
         return;
       }
 
-      res.redirect("/events");
+      if (isHtmx) {
+        res.render("events/partials/create-success", {
+          event: { ...createdEvent, status: "published" },
+          mode: "published",
+          message: "Event created and published successfully.",
+          layout: false,
+        });
+        return;
+      }
+
+      res.redirect(`/events/${createdEvent.id}`);
+      return;
+    }
+
+    if (isHtmx) {
+      res.render("events/partials/create-success", {
+        event: createdEvent,
+        mode: "draft",
+        message: "Event saved as draft successfully.",
+        layout: false,
+      });
       return;
     }
 
