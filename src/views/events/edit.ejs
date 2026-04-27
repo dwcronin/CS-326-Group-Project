@@ -1,17 +1,54 @@
-<!-- src/views/events/edit.ejs -->
-<!-- Extends the base layout from layouts/base.ejs automatically via express-ejs-layouts -->
+<div id="edit-form-region" class="max-w-2xl mx-auto py-8 px-4">
+  <h1 class="text-2xl font-medium text-gray-900 mb-6">Edit Event</h1>
 
-<div class="max-w-2xl mx-auto py-8 px-4">
-    <h1 class="text-2xl font-medium text-gray-900 mb-6">Edit Event</h1>
+  <div class="mb-6 flex flex-wrap items-center gap-3">
+    <span class="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700">
+      Status: <%= event.status %>
+    </span>
 
-  <!-- Error banner — only shown when errors array is non-empty -->
+    <% if (event.status === "draft") { %>
+      <form method="POST" action="/events/<%= event.id %>/status">
+        <input type="hidden" name="status" value="published" />
+        <button
+          type="submit"
+          class="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+        >
+          Publish Event
+        </button>
+      </form>
+    <% } %>
+
+    <% if (event.status === "published") { %>
+      <form method="POST" action="/events/<%= event.id %>/status">
+        <input type="hidden" name="status" value="cancelled" />
+        <button
+          type="submit"
+          class="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+        >
+          Cancel Event
+        </button>
+      </form>
+    <% } %>
+
+    <% if (event.status !== "draft") { %>
+      <a
+        href="/events/<%= event.id %>/attendees"
+        class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 border border-gray-300 hover:bg-gray-50 no-underline"
+      >
+        Open Attendee List
+      </a>
+    <% } %>
+  </div>
+
   <% if (errors && errors.length > 0) { %>
-    <%- include('../partials/error', { messages: errors[0] }) %>
+      <%- include('../partials/error', { message: errors[0] }) %>
   <% } %>
 
-  <form method="POST" action="/events/<%= event.id %>/edit">
-
-    <!-- Title -->
+  <form 
+    hx-post="/events/<%= event.id %>/edit"
+    hx-target="#edit-form-region"
+    hx-swap="outerHTML"
+    >
     <div class="mb-4">
       <label class="block text-sm font-medium text-gray-700 mb-1" for="title">
         Title
@@ -56,7 +93,21 @@
       />
     </div>
 
-    <!-- Dates — side by side -->
+    <!-- Category -->
+    <div class="mb-4">
+      <label class="block text-sm font-medium text-gray-700 mb-1" for="category">
+        Category
+      </label>
+      <input
+        type="text"
+        id="category"
+        name="category"
+        value="<%= fields.category ?? event.category %>"
+        class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+    </div>
+
+    <!-- Dates -->
     <div class="mb-4 flex gap-4">
       <div class="flex-1">
         <label class="block text-sm font-medium text-gray-700 mb-1" for="startDatetime">
@@ -70,6 +121,7 @@
           class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
+
       <div class="flex-1">
         <label class="block text-sm font-medium text-gray-700 mb-1" for="endDatetime">
           End date &amp; time
@@ -106,8 +158,9 @@
         type="submit"
         class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
-        Save changes
+        Save Changes
       </button>
+
       <a
         href="/events/<%= event.id %>"
         class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 border border-gray-300 hover:bg-gray-50"
@@ -115,6 +168,5 @@
         Cancel
       </a>
     </div>
-
   </form>
 </div>
