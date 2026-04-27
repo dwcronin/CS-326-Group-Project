@@ -388,7 +388,7 @@ class ExpressApp implements IApp {
           ? await this.saveController.getSavedEventIds(user.userId)
           : [];
 
-        await this.searchController.showEventList(res, rawQuery, session, savedIds);
+        await this.searchController.showEventList(res, rawQuery, session, savedIds, this.isHtmxRequest(req));
       }),
     );
 
