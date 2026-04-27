@@ -43,6 +43,7 @@ export interface IEventController {
     body: Record<string, string>,
     session: IAppBrowserSession,
     store: AppSessionStore,
+    isHtmx: boolean,
   ): Promise<void>;
 
   publishEventFromForm(
@@ -266,7 +267,7 @@ class EventController implements IEventController {
       eventId,
     );
 
-    if (!result.ok) {
+    if (result.ok === false) {
       const error = this.toEditError(result);
 
       res.status(this.mapEditErrorStatus(error)).render("partials/error", {
@@ -283,6 +284,7 @@ class EventController implements IEventController {
       session,
     });
   }
+
 
   async updateEventFromForm(
     res: Response,
@@ -337,23 +339,34 @@ class EventController implements IEventController {
       const error = this.toEditError(result);
 
       const isValidationError =
-      error.name === "InvalidTitleError"       ||
-      error.name === "InvalidDescriptionError" ||
-      error.name === "InvalidDateError"        ||
-      error.name === "InvalidCapacityError";
+        error.name === "InvalidTitleError" ||
+        error.name === "InvalidDescriptionError" ||
+        error.name === "InvalidDateError" ||
+        error.name === "InvalidCapacityError";
 
-    if (isValidationError) {
-      // Re-fetch the event to populate the form base
-      const eventResult = await this.service.getEventForEdit(
-        user.userId,
-        user.role,
-        eventId,
-      );
-      if (eventResult.ok === false) {
-        const fetchError = this.toEditError(eventResult);
-        res.status(this.mapEditErrorStatus(fetchError)).render("partials/error", {
-          message: fetchError.message,
-          layout: false,
+      if (isValidationError) {
+        const eventResult = await this.service.getEventForEdit(
+          user.userId,
+          user.role,
+          eventId,
+        );
+
+        if (!eventResult.ok) {
+          const fetchError = this.toEditError(eventResult);
+
+          res.status(this.mapEditErrorStatus(fetchError)).render("partials/error", {
+            message: fetchError.message,
+            layout: false,
+          });
+          return;
+        }
+
+        res.status(422).render("events/edit", {
+          event: eventResult.value,
+          errors: [result.value.message],
+          fields: body,
+          session,
+          layout: isHtmx ? false : undefined,
         });
         return;
       }
@@ -413,7 +426,7 @@ class EventController implements IEventController {
       "published",
     );
 
-    if (!result.ok) {
+    if (result.ok === false) {
       const error = this.toStatusError(result);
 
       res.status(this.mapStatusErrorStatus(error)).render("partials/error", {

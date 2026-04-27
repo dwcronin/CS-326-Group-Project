@@ -11,6 +11,7 @@ export interface IRsvpController {
     eventId: string,
     session: IAppBrowserSession,
     store: AppSessionStore,
+    isHtmx: boolean,
   ): Promise<void>;
 }
 
@@ -29,6 +30,7 @@ class RsvpController implements IRsvpController {
     eventId: string,
     session: IAppBrowserSession,
     store: AppSessionStore,
+    isHtmx: boolean,
   ): Promise<void> {
     const user = session.authenticatedUser;
 
@@ -52,8 +54,22 @@ class RsvpController implements IRsvpController {
     }
 
     // Success — redirect back to the event detail page.
-    // Sprint 2 will replace this redirect with an HTMX inline response.
-    res.redirect(`/events/${eventId}`);
+    if (isHtmx) {
+      // Derive the new button state from the action.
+      // A cancelled action means no active RSVP — show the plain RSVP button.
+      const newStatus =
+        result.value.rsvp.status === "cancelled"
+          ? null
+          : result.value.rsvp.status;
+
+      res.render("rsvp/button", {
+        eventId,
+        rsvpStatus: newStatus,
+        layout: false,
+      });
+    } else {
+      res.redirect(`/events/${eventId}`);
+    }
   }
 }
 

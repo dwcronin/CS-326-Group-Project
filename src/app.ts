@@ -354,6 +354,7 @@ class ExpressApp implements IApp {
           req.body as Record<string, string>,
           session,
           req.session as AppSessionStore,
+          this.isHtmxRequest(req),
         );
       }),
     );
@@ -429,6 +430,7 @@ class ExpressApp implements IApp {
           String(req.params.id),
           session,
           req.session as AppSessionStore,
+          this.isHtmxRequest(req),
         );
       }),
     );

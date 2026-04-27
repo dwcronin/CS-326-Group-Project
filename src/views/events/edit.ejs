@@ -1,7 +1,4 @@
-<!-- src/views/events/edit.ejs -->
-<!-- Extends the base layout from layouts/base.ejs automatically via express-ejs-layouts -->
-
-<div class="max-w-2xl mx-auto py-8 px-4">
+<div id="edit-form-region" class="max-w-2xl mx-auto py-8 px-4">
   <h1 class="text-2xl font-medium text-gray-900 mb-6">Edit Event</h1>
 
   <div class="mb-6 flex flex-wrap items-center gap-3">
@@ -44,13 +41,14 @@
   </div>
 
   <% if (errors && errors.length > 0) { %>
-    <div class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-      <%= errors[0] %>
-    </div>
+      <%- include('../partials/error', { message: errors[0] }) %>
   <% } %>
 
-  <form method="POST" action="/events/<%= event.id %>/edit">
-    <!-- Title -->
+  <form 
+    hx-post="/events/<%= event.id %>/edit"
+    hx-target="#edit-form-region"
+    hx-swap="outerHTML"
+    >
     <div class="mb-4">
       <label class="block text-sm font-medium text-gray-700 mb-1" for="title">
         Title
@@ -167,7 +165,7 @@
         href="/events/<%= event.id %>"
         class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 border border-gray-300 hover:bg-gray-50"
       >
-        Back to Events
+        Cancel
       </a>
     </div>
   </form>
