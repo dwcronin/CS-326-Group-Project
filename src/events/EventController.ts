@@ -323,90 +323,77 @@ class EventController implements IEventController {
 
 
   async updateEventFromForm(
-    res: Response,
-    eventId: string,
-    body: Record<string, string>,
-    session: IAppBrowserSession,
-    _store: AppSessionStore,
-    isHtmx: boolean = false,
-  ): Promise<void> {
-    const user = session.authenticatedUser;
+  res: Response,
+  eventId: string,
+  body: Record<string, string>,
+  session: IAppBrowserSession,
+  _store: AppSessionStore,
+  isHtmx: boolean = false,
+): Promise<void> {
+  const user = session.authenticatedUser;
 
-    if (!user) {
-      res.redirect("/login");
-      return;
-    }
+  if (!user) {
+    res.redirect("/login");
+    return;
+  }
 
-    if (user.role === "user") {
-      res.status(403).render("partials/error", {
-        message: "You do not have permission to edit events.",
-        layout: false,
-      });
-      return;
-    }
+  if (user.role === "user") {
+    res.status(403).render("partials/error", {
+      message: "You do not have permission to edit events.",
+      layout: false,
+    });
+    return;
+  }
 
-    const fields: EventUpdateFields = {};
+  const fields: EventUpdateFields = {};
 
-    if (body.title !== undefined) fields.title = body.title;
-    if (body.description !== undefined) fields.description = body.description;
-    if (body.location !== undefined) fields.location = body.location;
-    if (body.category !== undefined) fields.category = body.category;
+  if (body.title !== undefined) fields.title = body.title;
+  if (body.description !== undefined) fields.description = body.description;
+  if (body.location !== undefined) fields.location = body.location;
+  if (body.category !== undefined) fields.category = body.category;
 
-    if (body.startDatetime !== undefined) {
-      fields.startDatetime = new Date(body.startDatetime);
-    }
+  if (body.startDatetime !== undefined) {
+    fields.startDatetime = new Date(body.startDatetime);
+  }
+  if (body.endDatetime !== undefined) {
+    fields.endDatetime = new Date(body.endDatetime);
+  }
+  if (body.capacity !== undefined && body.capacity.trim() !== "") {
+    fields.capacity = parseInt(body.capacity, 10);
+  }
 
-    if (body.endDatetime !== undefined) {
-      fields.endDatetime = new Date(body.endDatetime);
-    }
+  const result = await this.service.updateEvent(
+    user.userId,
+    user.role,
+    eventId,
+    fields,
+  );
 
-    if (body.capacity !== undefined && body.capacity.trim() !== "") {
-      fields.capacity = parseInt(body.capacity, 10);
-    }
+  if (result.ok === false) {
+    const error = this.toEditError(result);
 
-    const result = await this.service.updateEvent(
-      user.userId,
-      user.role,
-      eventId,
-      fields,
-    );
+    const isValidationError =
+      error.name === "InvalidTitleError"       ||
+      error.name === "InvalidDescriptionError" ||
+      error.name === "InvalidDateError"        ||
+      error.name === "InvalidCapacityError";
 
-    if (result.ok === false) {
-      const error = this.toEditError(result);
+    if (isValidationError) {
+      const eventResult = await this.service.getEventForEdit(
+        user.userId,
+        user.role,
+        eventId,
+      );
 
-      const isValidationError =
-        error.name === "InvalidTitleError" ||
-        error.name === "InvalidDescriptionError" ||
-        error.name === "InvalidDateError" ||
-        error.name === "InvalidCapacityError";
-
-      if (isValidationError) {
-        const eventResult = await this.service.getEventForEdit(
-          user.userId,
-          user.role,
-          eventId,
-        );
-
-        if (!eventResult.ok) {
-          const fetchError = this.toEditError(eventResult);
-
-          res.status(this.mapEditErrorStatus(fetchError)).render("partials/error", {
-            message: fetchError.message,
-            layout: false,
-          });
-          return;
-        }
-
-        res.status(422).render("events/edit", {
-          event: eventResult.value,
-          errors: [result.value.message],
-          fields: body,
-          session,
-          layout: isHtmx ? false : undefined,
+      if (eventResult.ok === false) {
+        const fetchError = this.toEditError(eventResult);
+        res.status(this.mapEditErrorStatus(fetchError)).render("partials/error", {
+          message: fetchError.message,
+          layout: false,
         });
         return;
       }
-      // Re-render the form with the error and the user's typed values
+
       res.status(422).render("events/edit", {
         event:  eventResult.value,
         errors: [error.message],
