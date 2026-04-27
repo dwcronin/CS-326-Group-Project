@@ -292,7 +292,7 @@ class EventController implements IEventController {
     body: Record<string, string>,
     session: IAppBrowserSession,
     _store: AppSessionStore,
-    isHtmx: boolean,
+    isHtmx: boolean = false,
   ): Promise<void> {
     const user = session.authenticatedUser;
 
@@ -370,21 +370,33 @@ class EventController implements IEventController {
         });
         return;
       }
-
-      res.status(this.mapEditErrorStatus(error)).render("partials/error", {
-        message: error.message,
-        layout: false,
+      // Re-render the form with the error and the user's typed values
+      res.status(422).render("events/edit", {
+        event:  eventResult.value,
+        errors: [error.message],
+        fields: body,
+        session,
+        layout: isHtmx ? false : undefined,
       });
       return;
     }
 
-    if (isHtmx) {
-      res.set("HX-Redirect", `/events/${result.value.id}`);
-      res.status(200).end();
-    } else {
-      res.redirect(`/events/${result.value.id}`);
-    }
+    // Non-validation errors go to the error partial
+    res.status(this.mapEditErrorStatus(error)).render("partials/error", {
+      message: error.message,
+      layout: false,
+    });
+    return;
   }
+
+  // Success
+  if (isHtmx) {
+    res.set("HX-Redirect", `/events/${result.value.id}`);
+    res.status(200).end();
+  } else {
+    res.redirect(`/events/${result.value.id}`);
+  }
+}
 
   async publishEventFromForm(
     res: Response,
