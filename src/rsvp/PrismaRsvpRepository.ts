@@ -5,3 +5,19 @@ import type { Rsvp, RsvpStatus } from "./Rsvp.js";
 import type { RsvpRepository } from "./RsvpRepository.js";
 
 const prisma = new PrismaClient();
+
+function toRsvp(row: {
+  id: string;
+  eventId: string;
+  userId: string;
+  status: string;
+  createdAt: Date;
+}): Rsvp {
+  return {
+    id:        row.id,
+    eventId:   row.eventId,
+    userId:    row.userId,
+    status:    row.status as RsvpStatus,
+    createdAt: row.createdAt,
+  };
+}
