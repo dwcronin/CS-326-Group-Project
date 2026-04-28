@@ -11,6 +11,7 @@ export interface ISaveController {
     eventId: string,
     session: IAppBrowserSession,
     store: AppSessionStore,
+    isHtmx?: boolean,
   ): Promise<void>;
 
   showSavedList(
@@ -36,6 +37,7 @@ class SaveController implements ISaveController {
     eventId: string,
     session: IAppBrowserSession,
     _store: AppSessionStore,
+    isHtmx = false,
   ): Promise<void> {
     const user = session.authenticatedUser;
     if (!user) {
@@ -50,6 +52,12 @@ class SaveController implements ISaveController {
         message: result.value.message,
         layout: false,
       });
+      return;
+    }
+
+    if (isHtmx) {
+      const isSaved = result.value.action === "saved";
+      res.render("save/button", { eventId, isSaved, layout: false });
       return;
     }
 
