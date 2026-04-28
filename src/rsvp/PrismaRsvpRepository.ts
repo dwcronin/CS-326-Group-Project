@@ -21,3 +21,13 @@ function toRsvp(row: {
     createdAt: row.createdAt,
   };
 }
+
+export async function findByEventAndUser(
+  eventId: string,
+  userId: string,
+): Promise<Rsvp | null> {
+  const row = await prisma.rsvp.findUnique({
+    where: { eventId_userId: { eventId, userId } },
+  });
+  return row ? toRsvp(row) : null;
+}
