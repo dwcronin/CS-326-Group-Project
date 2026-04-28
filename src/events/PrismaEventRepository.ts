@@ -40,3 +40,33 @@ export async function findById(id: string): Promise<Event | null> {
   const row = await prisma.event.findUnique({ where: { id } });
   return row ? toEvent(row) : null;
 }
+
+export async function save(event: Event): Promise<Event> {
+  const row = await prisma.event.upsert({
+    where: { id: event.id },
+    create: {
+      id:            event.id,
+      title:         event.title,
+      description:   event.description,
+      location:      event.location,
+      category:      event.category,
+      status:        event.status,
+      capacity:      event.capacity ?? null,
+      startDatetime: event.startDatetime,
+      endDatetime:   event.endDatetime,
+      organizerId:   event.organizerId,
+    },
+    update: {
+      title:         event.title,
+      description:   event.description,
+      location:      event.location,
+      category:      event.category,
+      status:        event.status,
+      capacity:      event.capacity ?? null,
+      startDatetime: event.startDatetime,
+      endDatetime:   event.endDatetime,
+      organizerId:   event.organizerId,
+    },
+  });
+  return toEvent(row);
+}
