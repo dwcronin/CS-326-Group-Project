@@ -70,3 +70,39 @@ export async function save(event: Event): Promise<Event> {
   });
   return toEvent(row);
 }
+
+export async function update(
+  id: string,
+  fields: EventUpdateFields,
+): Promise<Event | null> {
+  try {
+    const row = await prisma.event.update({
+      where: { id },
+      data: {
+        ...(fields.title         !== undefined && { title: fields.title }),
+        ...(fields.description   !== undefined && { description: fields.description }),
+        ...(fields.location      !== undefined && { location: fields.location }),
+        ...(fields.category      !== undefined && { category: fields.category }),
+        ...(fields.startDatetime !== undefined && { startDatetime: fields.startDatetime }),
+        ...(fields.endDatetime   !== undefined && { endDatetime: fields.endDatetime }),
+        // capacity: undefined means "no limit" — store as null in Prisma
+        // capacity: a number means set it
+        // if the key is absent from fields, don't touch it
+        ...(Object.prototype.hasOwnProperty.call(fields, "capacity") && {
+          capacity: fields.capacity ?? null,
+        }),
+      },
+    });
+    return toEvent(row);
+  } catch {
+    // Prisma throws if the record doesn't exist
+    return null;
+  }
+}
+
+export async function findAll(): Promise<Event[]> {
+  const rows = await prisma.event.findMany({
+    orderBy: { startDatetime: "asc" },
+  });
+  return rows.map(toEvent);
+}
