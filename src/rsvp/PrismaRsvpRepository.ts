@@ -31,3 +31,14 @@ export async function findByEventAndUser(
   });
   return row ? toRsvp(row) : null;
 }
+
+export async function findActiveByEvent(eventId: string): Promise<Rsvp[]> {
+  const rows = await prisma.rsvp.findMany({
+    where: {
+      eventId,
+      status: { not: "cancelled" },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+  return rows.map(toRsvp);
+}
