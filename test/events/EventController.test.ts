@@ -1,9 +1,14 @@
 import request from "supertest";
 import type { Express } from "express";
 import { createComposedApp } from "../../src/composition";
-import * as EventRepo from "../../src/events/InMemoryEventRepository";
-import * as RsvpRepo from "../../src/rsvp/InMemoryRsvpRepository";
+import { PrismaClient } from "@prisma/client";
+import * as EventRepo from "../../src/events/PrismaEventRepository";
+import * as RsvpRepo from "../../src/rsvp/PrismaRsvpRepository";
 import type { Event } from "../../src/events/Event";
+
+
+// Prisma Client
+const prisma = new PrismaClient();
 
 // ── Helpers ───────────────────────────────────────────────────────
 
@@ -53,11 +58,17 @@ describe("Event editing endpoints", () => {
 
   beforeEach(async () => {
     // Reset stores and re-seed before every test so tests are independent.
-    EventRepo._clearForTesting();
-    RsvpRepo._clearForTesting();
+    await prisma.rsvp.deleteMany();
+    await prisma.event.deleteMany();
     await EventRepo.save(makeEvent());
     // Fresh agent per test so sessions never bleed between tests.
     agent = request.agent(expressApp);
+  });
+
+  afterAll(async () => {
+    await prisma.rsvp.deleteMany();
+    await prisma.event.deleteMany();
+    await prisma.$disconnect();
   });
 
   // ── GET /events/:id/edit ───────────────────────────────────────
