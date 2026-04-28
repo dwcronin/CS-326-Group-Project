@@ -42,3 +42,20 @@ export async function findActiveByEvent(eventId: string): Promise<Rsvp[]> {
   });
   return rows.map(toRsvp);
 }
+
+export async function save(rsvp: Rsvp): Promise<Rsvp> {
+  const row = await prisma.rsvp.upsert({
+    where: { eventId_userId: { eventId: rsvp.eventId, userId: rsvp.userId } },
+    create: {
+      id:        rsvp.id,
+      eventId:   rsvp.eventId,
+      userId:    rsvp.userId,
+      status:    rsvp.status,
+      createdAt: rsvp.createdAt,
+    },
+    update: {
+      status: rsvp.status,
+    },
+  });
+  return toRsvp(row);
+}
