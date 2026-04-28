@@ -59,3 +59,18 @@ export async function save(rsvp: Rsvp): Promise<Rsvp> {
   });
   return toRsvp(row);
 }
+
+export async function updateStatus(
+  id: string,
+  status: RsvpStatus,
+): Promise<Rsvp | null> {
+  try {
+    const row = await prisma.rsvp.update({
+      where: { id },
+      data:  { status },
+    });
+    return toRsvp(row);
+  } catch {
+    return null;
+  }
+}
