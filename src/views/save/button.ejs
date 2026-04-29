@@ -7,7 +7,14 @@
     isSaved  — boolean
 %>
 
-<form method="POST" action="/events/<%= eventId %>/save" class="inline">
+<form
+  method="POST"
+  action="/events/<%= eventId %>/save"
+  class="inline"
+  hx-post="/events/<%= eventId %>/save"
+  hx-target="this"
+  hx-swap="outerHTML"
+>
   <% if (isSaved) { %>
     <button
       type="submit"

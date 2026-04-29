@@ -44,6 +44,7 @@ export interface IEventController {
     body: Record<string, string>,
     session: IAppBrowserSession,
     store: AppSessionStore,
+    isHtmx: boolean,
   ): Promise<void>;
 
   publishEventFromForm(
@@ -71,7 +72,7 @@ export interface IEventController {
 
 class EventController implements IEventController {
   constructor(private readonly service: EventService) {}
- 
+
   private isHtmxRequest(res: Response): boolean {
     return res.req.get("HX-Request") === "true";
   }
@@ -124,10 +125,7 @@ class EventController implements IEventController {
     if (error.name === "NotAuthorisedError") return 403;
     return 500;
   }
- /**
-   * Renders the attendee list — returns a layout-less HTMX fragment
-   * for inline requests, or the full attendees page for direct navigation.
-   */
+
   private renderAttendeeList(
     res: Response,
     eventId: string,
@@ -143,13 +141,14 @@ class EventController implements IEventController {
       });
       return;
     }
+
     res.render("events/attendees", {
       attendees,
       eventId,
       session,
     });
   }
- 
+
   private renderLifecyclePanel(
     res: Response,
     event: Event,
@@ -198,6 +197,7 @@ class EventController implements IEventController {
     _store: AppSessionStore,
   ): Promise<void> {
     const user = session.authenticatedUser;
+    const isHtmx = this.isHtmxRequest(res);
 
     if (!user) {
       res.redirect("/login");
@@ -234,6 +234,18 @@ class EventController implements IEventController {
     if (!createResult.ok) {
       const error = this.toCreateError(createResult);
 
+      if (isHtmx) {
+        res.status(this.mapCreateErrorStatus(error)).render(
+          "events/partials/create-form",
+          {
+            errors: [error.message],
+            fields: body,
+            layout: false,
+          },
+        );
+        return;
+      }
+
       res.status(this.mapCreateErrorStatus(error)).render("events/new", {
         errors: [error.message],
         fields: body,
@@ -263,7 +275,27 @@ class EventController implements IEventController {
         return;
       }
 
-      res.redirect("/events");
+      if (isHtmx) {
+        res.render("events/partials/create-success", {
+          event: { ...createdEvent, status: "published" },
+          mode: "published",
+          message: "Event created and published successfully.",
+          layout: false,
+        });
+        return;
+      }
+
+      res.redirect(`/events/${createdEvent.id}`);
+      return;
+    }
+
+    if (isHtmx) {
+      res.render("events/partials/create-success", {
+        event: createdEvent,
+        mode: "draft",
+        message: "Event saved as draft successfully.",
+        layout: false,
+      });
       return;
     }
 
@@ -297,7 +329,7 @@ class EventController implements IEventController {
       eventId,
     );
 
-    if (!result.ok) {
+    if (result.ok === false) {
       const error = this.toEditError(result);
 
       res.status(this.mapEditErrorStatus(error)).render("partials/error", {
@@ -322,6 +354,7 @@ class EventController implements IEventController {
     body: Record<string, string>,
     session: IAppBrowserSession,
     _store: AppSessionStore,
+    isHtmx: boolean = false,
   ): Promise<void> {
     const user = session.authenticatedUser;
 
@@ -348,11 +381,9 @@ class EventController implements IEventController {
     if (body.startDatetime !== undefined) {
       fields.startDatetime = new Date(body.startDatetime);
     }
-
     if (body.endDatetime !== undefined) {
       fields.endDatetime = new Date(body.endDatetime);
     }
-
     if (body.capacity !== undefined && body.capacity.trim() !== "") {
       fields.capacity = parseInt(body.capacity, 10);
     }
@@ -364,48 +395,55 @@ class EventController implements IEventController {
       fields,
     );
 
-    if (!result.ok) {
+    if (result.ok === false) {
       const error = this.toEditError(result);
+
       const isValidationError =
         error.name === "InvalidTitleError" ||
         error.name === "InvalidDescriptionError" ||
         error.name === "InvalidDateError" ||
         error.name === "InvalidCapacityError";
- 
+
       if (isValidationError) {
         const eventResult = await this.service.getEventForEdit(
           user.userId,
           user.role,
           eventId,
         );
- 
-        if (!eventResult.ok) {
-          const eventError = this.toEditError(eventResult);
-          res.status(this.mapEditErrorStatus(eventError)).render("partials/error", {
-            message: eventError.message,
+
+        if (eventResult.ok === false) {
+          const fetchError = this.toEditError(eventResult);
+          res.status(this.mapEditErrorStatus(fetchError)).render("partials/error", {
+            message: fetchError.message,
             layout: false,
           });
           return;
         }
- 
+
         res.status(422).render("events/edit", {
           event: eventResult.value,
           errors: [error.message],
           fields: body,
           lifecycleError: null,
           session,
+          layout: isHtmx ? false : undefined,
         });
         return;
       }
- 
+
       res.status(this.mapEditErrorStatus(error)).render("partials/error", {
         message: error.message,
         layout: false,
       });
       return;
     }
- 
-    res.redirect(`/events/${result.value.id}/edit`);
+
+    if (isHtmx) {
+      res.set("HX-Redirect", `/events/${result.value.id}`);
+      res.status(200).end();
+    } else {
+      res.redirect(`/events/${result.value.id}`);
+    }
   }
 
   async publishEventFromForm(
@@ -436,7 +474,7 @@ class EventController implements IEventController {
       "published",
     );
 
-    if (!result.ok) {
+    if (result.ok === false) {
       const error = this.toStatusError(result);
 
       res.status(this.mapStatusErrorStatus(error)).render("partials/error", {
@@ -479,7 +517,7 @@ class EventController implements IEventController {
           user.role,
           eventId,
         );
- 
+
         if (!currentEventResult.ok) {
           const error = this.toEditError(currentEventResult);
           res.status(this.mapEditErrorStatus(error)).render("partials/error", {
@@ -488,7 +526,7 @@ class EventController implements IEventController {
           });
           return;
         }
- 
+
         res.status(422);
         this.renderLifecyclePanel(
           res,
@@ -498,7 +536,7 @@ class EventController implements IEventController {
         );
         return;
       }
- 
+
       res.status(422).render("partials/error", {
         message: "Invalid status transition.",
         layout: false,
@@ -515,33 +553,38 @@ class EventController implements IEventController {
 
     if (!result.ok) {
       const error = this.toStatusError(result);
- 
+
       if (this.isHtmxRequest(res) && error.name !== "EventNotFoundError") {
         const currentEventResult = await this.service.getEventForEdit(
           user.userId,
           user.role,
           eventId,
         );
- 
+
         if (currentEventResult.ok) {
           res.status(this.mapStatusErrorStatus(error));
-          this.renderLifecyclePanel(res, currentEventResult.value, session, error.message);
+          this.renderLifecyclePanel(
+            res,
+            currentEventResult.value,
+            session,
+            error.message,
+          );
           return;
         }
       }
- 
+
       res.status(this.mapStatusErrorStatus(error)).render("partials/error", {
         message: error.message,
         layout: false,
       });
       return;
     }
- 
+
     if (this.isHtmxRequest(res)) {
       this.renderLifecyclePanel(res, result.value, session);
       return;
     }
- 
+
     res.redirect(`/events/${eventId}/edit`);
   }
 
@@ -589,4 +632,3 @@ class EventController implements IEventController {
 export function CreateEventController(service: EventService): IEventController {
   return new EventController(service);
 }
- 
