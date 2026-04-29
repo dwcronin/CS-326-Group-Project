@@ -101,9 +101,9 @@ export async function seedTestData(): Promise<void> {
  * Call this in beforeEach or afterAll to ensure test isolation.
  */
 export async function cleanupTestData(): Promise<void> {
+  await prisma.savedEvent.deleteMany();
   await prisma.rsvp.deleteMany();
   await prisma.event.deleteMany();
-  // Add SavedEvent cleanup once the model is added
 }
 
 /**
