@@ -1,14 +1,12 @@
 import request from "supertest";
 import type { Express } from "express";
 import { createComposedApp } from "../../src/composition";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../../src/lib/prisma.js";
 import * as EventRepo from "../../src/events/PrismaEventRepository";
 import * as RsvpRepo from "../../src/rsvp/PrismaRsvpRepository";
 import type { Event } from "../../src/events/Event";
 
 
-// Prisma Client
-const prisma = new PrismaClient();
 
 // ── Helpers ───────────────────────────────────────────────────────
 
