@@ -4,14 +4,12 @@
 // for seeding and cleaning up Prisma data between tests.
 
 import { PrismaClient } from "@prisma/client";
-import { PrismaBetterSQLite } from "@prisma/adapter-better-sqlite3";
-import Database from "better-sqlite3";
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 
 // Point tests to a separate test database
 process.env.DATABASE_URL = "file:./prisma/test.db";
 
-const db = new Database("./prisma/test.db");
-const adapter = new PrismaBetterSQLite(db);
+const adapter = new PrismaBetterSqlite3({ url: "./prisma/test.db" });
 const prisma = new PrismaClient({ adapter });
 
 // Demo events that mirror InMemoryEventRepository's DEMO_EVENTS
@@ -91,12 +89,10 @@ export const TEST_RSVPS = [
 export async function seedTestData(): Promise<void> {
   await prisma.event.createMany({
     data: TEST_EVENTS,
-    skipDuplicates: true,
   });
 
   await prisma.rsvp.createMany({
     data: TEST_RSVPS,
-    skipDuplicates: true,
   });
 }
 
