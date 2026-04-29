@@ -4,7 +4,15 @@ import { PrismaClient } from "@prisma/client";
 import type { Rsvp, RsvpStatus } from "./Rsvp.js";
 import type { RsvpRepository } from "./RsvpRepository.js";
 
-const prisma = new PrismaClient();
+
+let prisma: PrismaClient | null = null;
+
+function getPrisma(): PrismaClient {
+  if (!prisma) {
+    prisma = new PrismaClient();
+  }
+  return prisma;
+}
 
 function toRsvp(row: {
   id: string;
@@ -26,14 +34,14 @@ export async function findByEventAndUser(
   eventId: string,
   userId: string,
 ): Promise<Rsvp | null> {
-  const row = await prisma.rsvp.findUnique({
+  const row = await getPrisma().rsvp.findUnique({
     where: { eventId_userId: { eventId, userId } },
   });
   return row ? toRsvp(row) : null;
 }
 
 export async function findActiveByEvent(eventId: string): Promise<Rsvp[]> {
-  const rows = await prisma.rsvp.findMany({
+  const rows = await getPrisma().rsvp.findMany({
     where: {
       eventId,
       status: { not: "cancelled" },
@@ -44,7 +52,7 @@ export async function findActiveByEvent(eventId: string): Promise<Rsvp[]> {
 }
 
 export async function save(rsvp: Rsvp): Promise<Rsvp> {
-  const row = await prisma.rsvp.upsert({
+  const row = await getPrisma().rsvp.upsert({
     where: { eventId_userId: { eventId: rsvp.eventId, userId: rsvp.userId } },
     create: {
       id:        rsvp.id,
@@ -65,7 +73,7 @@ export async function updateStatus(
   status: RsvpStatus,
 ): Promise<Rsvp | null> {
   try {
-    const row = await prisma.rsvp.update({
+    const row = await getPrisma().rsvp.update({
       where: { id },
       data:  { status },
     });
@@ -73,4 +81,13 @@ export async function updateStatus(
   } catch {
     return null;
   }
+}
+
+export async function listByEventId(eventId: string) {
+  const rows = await getPrisma().rsvp.findMany({
+    where: { eventId },
+    orderBy: { createdAt: "asc" },
+  });
+
+  return rows.map(toRsvp);
 }
