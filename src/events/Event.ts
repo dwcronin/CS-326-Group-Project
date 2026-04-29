@@ -56,16 +56,6 @@ export interface EventUpdateFields {
   capacity?: number;
 }
 
-export type EventCreateError =
-  | { name: "InvalidTitleError"; message: string }
-  | { name: "InvalidDescriptionError"; message: string }
-  | { name: "InvalidDateError"; message: string }
-  | { name: "InvalidCapacityError"; message: string }
-  | { name: "NotAuthorisedError"; message: string };
-
-/**
- * The named errors for Feature 3, as agreed in CONTRACTS.md.
- */
 export type EventEditError =
   | { name: "EventNotFoundError"; message: string }
   | { name: "NotAuthorisedError"; message: string }
@@ -75,6 +65,9 @@ export type EventEditError =
   | { name: "InvalidDateError"; message: string }
   | { name: "InvalidCapacityError"; message: string };
 
+/**
+ * The named errors for event creation and editing flows.
+ */
 export type EventCreateError =
   | { name: "NotAuthorisedError"; message: string }
   | { name: "InvalidTitleError"; message: string }
