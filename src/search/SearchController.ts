@@ -10,6 +10,7 @@ export interface ISearchController {
     rawQuery: string,
     session: IAppBrowserSession,
     savedEventIds: string[],
+    isHtmx: boolean,
   ): Promise<void>;
 }
 
@@ -21,6 +22,7 @@ class SearchController implements ISearchController {
     rawQuery: string,
     session: IAppBrowserSession,
     savedEventIds: string[],
+    isHtmx: boolean,
   ): Promise<void> {
     const result = await this.service.searchEvents(rawQuery);
 
@@ -33,6 +35,13 @@ class SearchController implements ISearchController {
     }
 
     const { events, query } = result.value;
+
+    if (isHtmx) {
+      // Return only the results fragment — HTMX swaps it into #event-results
+      res.render("events/_list-results", { events, query, savedEventIds, session, layout: false });
+      return;
+    }
+
     res.render("events/list", { events, query, savedEventIds, session });
   }
 }
