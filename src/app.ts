@@ -354,6 +354,7 @@ class ExpressApp implements IApp {
           req.body as Record<string, string>,
           session,
           req.session as AppSessionStore,
+          this.isHtmxRequest(req),
         );
       }),
     );
@@ -387,7 +388,7 @@ class ExpressApp implements IApp {
           ? await this.saveController.getSavedEventIds(user.userId)
           : [];
 
-        await this.searchController.showEventList(res, rawQuery, session, savedIds);
+        await this.searchController.showEventList(res, rawQuery, session, savedIds, this.isHtmxRequest(req));
       }),
     );
 
@@ -402,6 +403,7 @@ class ExpressApp implements IApp {
           String(req.params.id),
           session,
           req.session as AppSessionStore,
+          this.isHtmxRequest(req),
         );
       }),
     );
@@ -429,6 +431,7 @@ class ExpressApp implements IApp {
           String(req.params.id),
           session,
           req.session as AppSessionStore,
+          this.isHtmxRequest(req),
         );
       }),
     );
