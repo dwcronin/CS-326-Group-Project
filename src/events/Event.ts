@@ -56,6 +56,9 @@ export type EventEditError =
   | { name: "InvalidDateError"; message: string }
   | { name: "InvalidCapacityError"; message: string };
 
+/**
+ * The named errors for event creation and editing flows.
+ */
 export type EventCreateError =
   | { name: "NotAuthorisedError"; message: string }
   | { name: "InvalidTitleError"; message: string }
