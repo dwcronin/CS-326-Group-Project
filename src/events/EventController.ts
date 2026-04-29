@@ -386,38 +386,6 @@ class EventController implements IEventController {
         return;
       }
 
-      const isValidationError =
-        error.name === "InvalidTitleError" ||
-        error.name === "InvalidDescriptionError" ||
-        error.name === "InvalidDateError" ||
-        error.name === "InvalidCapacityError";
-
-      if (isValidationError) {
-        const eventResult = await this.service.getEventForEdit(
-          user.userId,
-          user.role,
-          eventId,
-        );
-
-        if (!eventResult.ok) {
-          const eventError = this.toEditError(eventResult);
-
-          res.status(this.mapEditErrorStatus(eventError)).render("partials/error", {
-            message: eventError.message,
-            layout: false,
-          });
-          return;
-        }
-
-        res.status(422).render("events/edit", {
-          event: eventResult.value,
-          errors: [error.message],
-          fields: body,
-          session,
-        });
-        return;
-      }
-
       res.status(this.mapEditErrorStatus(error)).render("partials/error", {
         message: error.message,
         layout: false,
