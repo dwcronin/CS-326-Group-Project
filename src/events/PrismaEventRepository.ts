@@ -1,10 +1,10 @@
 // src/events/PrismaEventRepository.ts
 
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../lib/prisma.js";
 import type { Event, EventUpdateFields } from "./Event.js";
 import type { EventRepository } from "./EventRepository.js";
 
-const prisma = new PrismaClient();
+
 
 function toEvent(row: {
   id: string;

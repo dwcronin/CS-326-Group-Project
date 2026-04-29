@@ -1,10 +1,10 @@
 // src/rsvp/PrismaRsvpRepository.ts
 
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../lib/prisma.js";
 import type { Rsvp, RsvpStatus } from "./Rsvp.js";
 import type { RsvpRepository } from "./RsvpRepository.js";
 
-const prisma = new PrismaClient();
+
 
 function toRsvp(row: {
   id: string;
