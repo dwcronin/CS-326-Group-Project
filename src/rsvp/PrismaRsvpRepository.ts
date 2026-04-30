@@ -56,6 +56,7 @@ export async function save(rsvp: Rsvp): Promise<Rsvp> {
     },
     update: {
       status: rsvp.status,
+      // createdAt is intentionally not updated — preserve original RSVP time
     },
   });
   return toRsvp(row);
