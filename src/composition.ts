@@ -9,15 +9,15 @@ import { seed } from "./seed.js";
 import { CreateLoggingService } from "./service/LoggingService";
 import type { ILoggingService } from "./service/LoggingService";
 
-import * as EventRepo from "./events/InMemoryEventRepository.js";
+import * as EventRepo from "./events/PrismaEventRepository.js";
 import { EventService } from "./events/EventService.js";
 import { CreateEventController } from "./events/EventController.js";
 
-import * as RsvpRepo from "./rsvp/InMemoryRsvpRepository.js";
+import * as RsvpRepo from "./rsvp/PrismaRsvpRepository.js";
 import { RsvpService } from "./rsvp/RsvpService.js";
 import { CreateRsvpController } from "./rsvp/RsvpController.js";
 
-import * as SaveRepo from "./save/InMemorySaveRepository.js";
+import * as SaveRepo from "./save/PrismaSaveRepository.js";
 import { SaveService } from "./save/SaveService.js";
 import { CreateSaveController } from "./save/SaveController.js";
 

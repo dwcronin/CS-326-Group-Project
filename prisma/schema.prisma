@@ -17,3 +17,41 @@ datasource db {
 //   createdAt DateTime @default(now())
 //   updatedAt DateTime @updatedAt
 // }
+
+model Event {
+  id            String   @id @default(uuid())
+  title         String
+  description   String
+  location      String
+  category      String
+  status        String   @default("draft")
+  capacity      Int?
+  startDatetime DateTime
+  endDatetime   DateTime
+  organizerId   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  rsvps         Rsvp[]
+}
+
+model Rsvp {
+  id        String   @id @default(uuid())
+  eventId   String
+  userId    String
+  status    String   @default("going")
+  createdAt DateTime @default(now())
+
+  event     Event    @relation(fields: [eventId], references: [id])
+
+  @@unique([eventId, userId])
+}
+
+model SavedEvent {
+  id        String   @id @default(uuid())
+  eventId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@unique([eventId, userId])
+}

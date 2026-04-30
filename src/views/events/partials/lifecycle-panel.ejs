@@ -1,0 +1,78 @@
+<section id="event-lifecycle-panel" class="mb-6 space-y-4">
+  <div class="flex flex-wrap items-center gap-3">
+    <span
+      class="<%=
+        event.status === 'published'
+          ? 'bg-green-100 text-green-800'
+          : event.status === 'cancelled'
+            ? 'bg-red-100 text-red-800'
+            : 'bg-amber-100 text-amber-800'
+      %> rounded-full px-3 py-1 text-sm font-medium"
+    >
+      Status: <%= event.status %>
+    </span>
+
+    <% if (event.status === "draft") { %>
+      <form
+        method="POST"
+        action="/events/<%= event.id %>/status"
+        hx-post="/events/<%= event.id %>/status"
+        hx-target="#event-lifecycle-panel"
+        hx-swap="outerHTML"
+      >
+        <input type="hidden" name="status" value="published" />
+        <button
+          type="submit"
+          class="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+        >
+          Publish Event
+        </button>
+      </form>
+    <% } %>
+
+    <% if (event.status === "published") { %>
+      <form
+        method="POST"
+        action="/events/<%= event.id %>/status"
+        hx-post="/events/<%= event.id %>/status"
+        hx-target="#event-lifecycle-panel"
+        hx-swap="outerHTML"
+      >
+        <input type="hidden" name="status" value="cancelled" />
+        <button
+          type="submit"
+          class="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+        >
+          Cancel Event
+        </button>
+      </form>
+    <% } %>
+
+    <% if (event.status !== "draft") { %>
+      <button
+        type="button"
+        hx-get="/events/<%= event.id %>/attendees"
+        hx-target="#attendee-list-panel"
+        hx-swap="outerHTML"
+        hx-indicator="#attendee-loading"
+        class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400"
+      >
+        View Attendees
+      </button>
+    <% } %>
+  </div>
+
+  <p class="text-sm text-gray-600">
+    <% if (event.status === "draft") { %>
+      Draft events stay hidden until you publish them.
+    <% } else if (event.status === "published") { %>
+      Published events are visible to members. Cancelling is permanent.
+    <% } else { %>
+      Cancelled events are locked and can no longer be restored.
+    <% } %>
+  </p>
+
+  <% if (errorMessage) { %>
+    <%- include("../../partials/error", { message: errorMessage }) %>
+  <% } %>
+</section>

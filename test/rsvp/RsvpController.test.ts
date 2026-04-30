@@ -2,9 +2,12 @@ import request from "supertest";
 import type { Express } from "express";
 import { randomUUID } from "node:crypto";
 import { createComposedApp } from "../../src/composition";
-import * as EventRepo from "../../src/events/InMemoryEventRepository";
-import * as RsvpRepo from "../../src/rsvp/InMemoryRsvpRepository";
+import { prisma } from "../../src/lib/prisma.js";
+import * as EventRepo from "../../src/events/PrismaEventRepository";
+import * as RsvpRepo from "../../src/rsvp/PrismaRsvpRepository";
 import type { Event } from "../../src/events/Event";
+
+
 
 // ── Helpers ───────────────────────────────────────────────────────
 
@@ -48,10 +51,16 @@ describe("RSVP toggle endpoint", () => {
   });
 
   beforeEach(async () => {
-    EventRepo._clearForTesting();
-    RsvpRepo._clearForTesting();
+    await prisma.rsvp.deleteMany();
+    await prisma.event.deleteMany();
     await EventRepo.save(makeEvent());
     agent = request.agent(expressApp);
+  });
+
+  afterAll(async () => {
+    await prisma.rsvp.deleteMany();
+    await prisma.event.deleteMany();
+    await prisma.$disconnect();
   });
 
   // ── Happy path ───────────────────────────────────────────────────
