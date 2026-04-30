@@ -10,7 +10,6 @@
 import request from "supertest";
 import { createComposedApp } from "../../src/composition";
 import { seedTestData, cleanupTestData, disconnectPrisma } from "../setup";
-import * as SaveRepo from "../../src/save/InMemorySaveRepository";
 
 type ExpressApp = Parameters<typeof request>[0];
 
@@ -39,8 +38,9 @@ describe("POST /events/:id/save and GET /saved-events — save endpoints", () =>
   });
 
   // Clear saves between tests so toggle state is predictable.
-  beforeEach(() => {
-    SaveRepo._clearForTesting();
+  beforeEach(async () => {
+    await cleanupTestData();
+    await seedTestData();
   });
 
   afterAll(async () => {
