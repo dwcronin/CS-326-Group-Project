@@ -1,8 +1,8 @@
 // test/search/SearchEndpoints.test.ts
 //
 // SuperTest endpoint tests for Feature 10 (Event Search).
-// Tests hit the real Express app with the in-memory data layer.
-// DEMO_EVENTS in InMemoryEventRepository pre-loads:
+// Tests hit the real Express app with Prisma-backed repositories.
+// TEST_EVENTS from test/setup.ts pre-loads:
 //   - event-published-1: "Spring Showcase" (published, future)
 //   - event-cancelled-1: "Cancelled Workshop" (cancelled)
 //   - event-draft-1:     "Draft Planning Session" (draft)
@@ -10,6 +10,7 @@
 
 import request from "supertest";
 import { createComposedApp } from "../../src/composition";
+import { seedTestData, cleanupTestData, disconnectPrisma } from "../setup";
 
 // Log in and return the session cookie for subsequent requests.
 async function loginAs(
@@ -32,9 +33,16 @@ describe("GET /events — search endpoints", () => {
   let staffCookie: string[];
 
   beforeAll(async () => {
+    await cleanupTestData();
+    await seedTestData();
     app = createComposedApp().getExpressApp();
     userCookie  = await loginAs(app as Express.Application, "user@app.test");
     staffCookie = await loginAs(app as Express.Application, "staff@app.test");
+  });
+
+  afterAll(async () => {
+    await cleanupTestData();
+    await disconnectPrisma();
   });
 
   // ── Authentication ─────────────────────────────────────────────
