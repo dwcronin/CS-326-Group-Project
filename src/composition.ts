@@ -9,11 +9,13 @@ import { seed } from "./seed.js";
 import { CreateLoggingService } from "./service/LoggingService";
 import type { ILoggingService } from "./service/LoggingService";
 
-import * as EventRepo from "./events/PrismaEventRepository.js";
+import * as InMemoryEventRepo from "./events/InMemoryEventRepository.js";
+import * as PrismaEventRepo from "./events/PrismaEventRepository.js";
 import { EventService } from "./events/EventService.js";
 import { CreateEventController } from "./events/EventController.js";
 
-import * as RsvpRepo from "./rsvp/PrismaRsvpRepository.js";
+import * as InMemoryRsvpRepo from "./rsvp/InMemoryRsvpRepository.js";
+import * as PrismaRsvpRepo from "./rsvp/PrismaRsvpRepository.js";
 import { RsvpService } from "./rsvp/RsvpService.js";
 import { CreateRsvpController } from "./rsvp/RsvpController.js";
 
@@ -29,29 +31,40 @@ export function createComposedApp(logger?: ILoggingService): IApp {
 
   if (process.env.NODE_ENV !== "test") seed();
 
-  // Authentication & authorization wiring
   const authUsers = CreateInMemoryUserRepository();
   const passwordHasher = CreatePasswordHasher();
   const authService = CreateAuthService(authUsers, passwordHasher);
   const adminUserService = CreateAdminUserService(authUsers, passwordHasher);
-  const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
+  const authController = CreateAuthController(
+    authService,
+    adminUserService,
+    resolvedLogger,
+  );
 
-  // Event feature wiring
-  const eventService = new EventService(EventRepo);
+  const eventRepo =
+    process.env.NODE_ENV === "test" ? InMemoryEventRepo : PrismaEventRepo;
+
+  const rsvpRepo =
+    process.env.NODE_ENV === "test" ? InMemoryRsvpRepo : PrismaRsvpRepo;
+
+  const eventService = new EventService(eventRepo);
   const eventController = CreateEventController(eventService);
 
-  // RSVP feature wiring
-  // RsvpService takes both repos — it needs EventRepo to check event status
-  // and capacity, and RsvpRepo to read and write RSVPs.
-  const rsvpService = new RsvpService(RsvpRepo, EventRepo);
+  const rsvpService = new RsvpService(rsvpRepo, eventRepo);
   const rsvpController = CreateRsvpController(rsvpService);
 
-  const saveService = new SaveService(SaveRepo, EventRepo);
+  const saveService = new SaveService(SaveRepo, eventRepo);
   const saveController = CreateSaveController(saveService);
 
-  // Search feature wiring
-  const searchService = new SearchService(EventRepo);
+  const searchService = new SearchService(eventRepo);
   const searchController = CreateSearchController(searchService);
 
-  return CreateApp(authController, resolvedLogger, eventController, rsvpController, saveController, searchController);
-}
+  return CreateApp(
+    authController,
+    resolvedLogger,
+    eventController,
+    rsvpController,
+    saveController,
+    searchController,
+  );
+} 

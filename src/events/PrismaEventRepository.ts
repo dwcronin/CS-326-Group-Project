@@ -1,8 +1,12 @@
 // src/events/PrismaEventRepository.ts
 
 import { prisma } from "../lib/prisma.js";
+<<<<<<< HEAD
+import type { Event, EventUpdateFields } from "./Event.js";
+=======
 import type { Event, EventUpdateFields, EventStatus, EventAttendeeSummary } from "./Event.js";
 import type { EventRepository } from "./EventRepository.js";
+>>>>>>> e6eb672ab5f441f7c4dd9df546cd4c3570f7350e
 
 function toEvent(row: {
   id: string;
@@ -19,18 +23,18 @@ function toEvent(row: {
   updatedAt: Date;
 }): Event {
   return {
-    id:            row.id,
-    title:         row.title,
-    description:   row.description,
-    location:      row.location,
-    category:      row.category,
-    status:        row.status as Event["status"],
-    capacity:      row.capacity ?? undefined,
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    location: row.location,
+    category: row.category,
+    status: row.status as Event["status"],
+    capacity: row.capacity ?? undefined,
     startDatetime: row.startDatetime,
-    endDatetime:   row.endDatetime,
-    organizerId:   row.organizerId,
-    createdAt:     row.createdAt,
-    updatedAt:     row.updatedAt,
+    endDatetime: row.endDatetime,
+    organizerId: row.organizerId,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
   };
 }
 
@@ -43,29 +47,30 @@ export async function save(event: Event): Promise<Event> {
   const row = await prisma.event.upsert({
     where: { id: event.id },
     create: {
-      id:            event.id,
-      title:         event.title,
-      description:   event.description,
-      location:      event.location,
-      category:      event.category,
-      status:        event.status,
-      capacity:      event.capacity ?? null,
+      id: event.id,
+      title: event.title,
+      description: event.description,
+      location: event.location,
+      category: event.category,
+      status: event.status,
+      capacity: event.capacity ?? null,
       startDatetime: event.startDatetime,
-      endDatetime:   event.endDatetime,
-      organizerId:   event.organizerId,
+      endDatetime: event.endDatetime,
+      organizerId: event.organizerId,
     },
     update: {
-      title:         event.title,
-      description:   event.description,
-      location:      event.location,
-      category:      event.category,
-      status:        event.status,
-      capacity:      event.capacity ?? null,
+      title: event.title,
+      description: event.description,
+      location: event.location,
+      category: event.category,
+      status: event.status,
+      capacity: event.capacity ?? null,
       startDatetime: event.startDatetime,
-      endDatetime:   event.endDatetime,
-      organizerId:   event.organizerId,
+      endDatetime: event.endDatetime,
+      organizerId: event.organizerId,
     },
   });
+
   return toEvent(row);
 }
 
@@ -77,23 +82,20 @@ export async function update(
     const row = await prisma.event.update({
       where: { id },
       data: {
-        ...(fields.title         !== undefined && { title: fields.title }),
-        ...(fields.description   !== undefined && { description: fields.description }),
-        ...(fields.location      !== undefined && { location: fields.location }),
-        ...(fields.category      !== undefined && { category: fields.category }),
+        ...(fields.title !== undefined && { title: fields.title }),
+        ...(fields.description !== undefined && { description: fields.description }),
+        ...(fields.location !== undefined && { location: fields.location }),
+        ...(fields.category !== undefined && { category: fields.category }),
         ...(fields.startDatetime !== undefined && { startDatetime: fields.startDatetime }),
-        ...(fields.endDatetime   !== undefined && { endDatetime: fields.endDatetime }),
-        // capacity: undefined means "no limit" — store as null in Prisma
-        // capacity: a number means set it
-        // if the key is absent from fields, don't touch it
+        ...(fields.endDatetime !== undefined && { endDatetime: fields.endDatetime }),
         ...(Object.prototype.hasOwnProperty.call(fields, "capacity") && {
           capacity: fields.capacity ?? null,
         }),
       },
     });
+
     return toEvent(row);
   } catch {
-    // Prisma throws if the record doesn't exist
     return null;
   }
 }
@@ -102,24 +104,37 @@ export async function findAll(): Promise<Event[]> {
   const rows = await prisma.event.findMany({
     orderBy: { startDatetime: "asc" },
   });
+
   return rows.map(toEvent);
 }
 
 export async function updateStatus(
   id: string,
+<<<<<<< HEAD
+  status: Event["status"],
+=======
   status: EventStatus,
+>>>>>>> e6eb672ab5f441f7c4dd9df546cd4c3570f7350e
 ): Promise<Event | null> {
   try {
     const row = await prisma.event.update({
       where: { id },
       data: { status },
     });
+<<<<<<< HEAD
+
+=======
+>>>>>>> e6eb672ab5f441f7c4dd9df546cd4c3570f7350e
     return toEvent(row);
   } catch {
     return null;
   }
 }
 
+<<<<<<< HEAD
+export async function listAttendees() {
+  return [];
+=======
 export async function listAttendees(
   id: string,
 ): Promise<EventAttendeeSummary[]> {
@@ -139,4 +154,5 @@ export async function listAttendees(
     rsvpStatus: rsvp.status as "going" | "waitlisted",
     rsvpCreatedAt: rsvp.createdAt,
   }));
+>>>>>>> e6eb672ab5f441f7c4dd9df546cd4c3570f7350e
 }
