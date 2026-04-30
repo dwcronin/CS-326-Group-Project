@@ -1,7 +1,6 @@
 import request from "supertest";
 import { createComposedApp } from "../../src/composition";
-import * as EventRepo from "../../src/events/InMemoryEventRepository";
-import * as RsvpRepo from "../../src/rsvp/InMemoryRsvpRepository";
+import { prisma } from "../../src/lib/prisma";
 import type { Event } from "../../src/events/Event";
 
 function makeEvent(overrides: Partial<Event> = {}): Event {
@@ -30,18 +29,38 @@ async function loginAs(email: string, agent: request.SuperAgentTest): Promise<vo
     .expect(302);
 }
 
+async function seedEvent(overrides: Partial<Event> = {}) {
+  const e = makeEvent(overrides);
+  await prisma.event.create({
+    data: {
+      id:            e.id,
+      title:         e.title,
+      description:   e.description,
+      location:      e.location,
+      category:      e.category,
+      status:        e.status,
+      capacity:      e.capacity ?? null,
+      startDatetime: e.startDatetime,
+      endDatetime:   e.endDatetime,
+      organizerId:   e.organizerId,
+    },
+  });
+}
+
 describe("Event lifecycle integration", () => {
   beforeEach(async () => {
-    EventRepo._clearForTesting();
-    RsvpRepo._clearForTesting();
+    await prisma.rsvp.deleteMany();
+    await prisma.event.deleteMany();
 
-    await EventRepo.save(makeEvent({ id: "event-draft-1", status: "draft" }));
-    await EventRepo.save(makeEvent({ id: "event-published-1", status: "published" }));
-    await EventRepo.save(makeEvent({
-      id: "event-admin-owned-1",
-      organizerId: "user-admin",
-      status: "published",
-    }));
+    await seedEvent({ id: "event-draft-1", status: "draft" });
+    await seedEvent({ id: "event-published-1", status: "published" });
+    await seedEvent({ id: "event-admin-owned-1", organizerId: "user-admin", status: "published" });
+  });
+
+  afterAll(async () => {
+    await prisma.rsvp.deleteMany();
+    await prisma.event.deleteMany();
+    await prisma.$disconnect();
   });
 
   it("publishes a draft event inline for the organizer", async () => {
@@ -110,3 +129,4 @@ describe("Event lifecycle integration", () => {
     expect(response.text).toContain("You do not have permission to change event status.");
   });
 });
+ 

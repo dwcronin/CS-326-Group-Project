@@ -1,9 +1,7 @@
 import request from "supertest";
 import { createComposedApp } from "../../src/composition";
-import * as EventRepo from "../../src/events/InMemoryEventRepository";
-import * as RsvpRepo from "../../src/rsvp/InMemoryRsvpRepository";
+import { prisma } from "../../src/lib/prisma";
 import type { Event } from "../../src/events/Event";
-import type { Rsvp } from "../../src/rsvp/Rsvp";
 
 function makeEvent(overrides: Partial<Event> = {}): Event {
   return {
@@ -34,15 +32,45 @@ async function loginAs(
     .expect(302);
 }
 
+async function seedEvent(overrides: Partial<Event> = {}) {
+  const e = makeEvent(overrides);
+  await prisma.event.create({
+    data: {
+      id:            e.id,
+      title:         e.title,
+      description:   e.description,
+      location:      e.location,
+      category:      e.category,
+      status:        e.status,
+      capacity:      e.capacity ?? null,
+      startDatetime: e.startDatetime,
+      endDatetime:   e.endDatetime,
+      organizerId:   e.organizerId,
+    },
+  });
+}
+
+async function seedRsvp(id: string, eventId: string, userId: string, status: string, createdAt: Date) {
+  await prisma.rsvp.create({
+    data: { id, eventId, userId, status, createdAt },
+  });
+}
+
 describe("Feature 12 — Attendee List (Sprint 2)", () => {
-  beforeEach(() => {
-    EventRepo._clearForTesting();
-    RsvpRepo._clearForTesting();
+  beforeEach(async () => {
+    await prisma.rsvp.deleteMany();
+    await prisma.event.deleteMany();
+  });
+
+  afterAll(async () => {
+    await prisma.rsvp.deleteMany();
+    await prisma.event.deleteMany();
+    await prisma.$disconnect();
   });
 
   describe("authorised access", () => {
     it("returns 200 for the organizer of the event", async () => {
-      await EventRepo.save(makeEvent());
+      await seedEvent();
       const app = createComposedApp().getExpressApp();
       const agent = request.agent(app);
       await loginAs("staff@app.test", agent);
@@ -53,7 +81,7 @@ describe("Feature 12 — Attendee List (Sprint 2)", () => {
     });
 
     it("returns 200 for an admin viewing any event's attendees", async () => {
-      await EventRepo.save(makeEvent({ organizerId: "user-staff" }));
+      await seedEvent({ organizerId: "user-staff" });
       const app = createComposedApp().getExpressApp();
       const agent = request.agent(app);
       await loginAs("admin@app.test", agent);
@@ -64,7 +92,7 @@ describe("Feature 12 — Attendee List (Sprint 2)", () => {
     });
 
     it("returns the attendee list as an HTMX fragment (no <html> wrapper)", async () => {
-      await EventRepo.save(makeEvent());
+      await seedEvent();
       const app = createComposedApp().getExpressApp();
       const agent = request.agent(app);
       await loginAs("staff@app.test", agent);
@@ -80,7 +108,7 @@ describe("Feature 12 — Attendee List (Sprint 2)", () => {
 
   describe("unauthorised access", () => {
     it("returns 403 when a member (user role) requests the attendee list", async () => {
-      await EventRepo.save(makeEvent());
+      await seedEvent();
       const app = createComposedApp().getExpressApp();
       const agent = request.agent(app);
       await loginAs("user@app.test", agent);
@@ -89,7 +117,7 @@ describe("Feature 12 — Attendee List (Sprint 2)", () => {
     });
 
     it("returns 403 when a staff member who is not the organizer requests the list", async () => {
-      await EventRepo.save(makeEvent({ organizerId: "user-admin" }));
+      await seedEvent({ organizerId: "user-admin" });
       const app = createComposedApp().getExpressApp();
       const agent = request.agent(app);
       await loginAs("staff@app.test", agent);
@@ -100,7 +128,7 @@ describe("Feature 12 — Attendee List (Sprint 2)", () => {
     });
 
     it("redirects unauthenticated visitors to /login", async () => {
-      await EventRepo.save(makeEvent());
+      await seedEvent();
       const app = createComposedApp().getExpressApp();
 
       await request(app).get("/events/event-1/attendees").expect(302);
@@ -109,21 +137,9 @@ describe("Feature 12 — Attendee List (Sprint 2)", () => {
 
   describe("grouping and sorting", () => {
     it("lists going attendees before waitlisted attendees", async () => {
-      await EventRepo.save(makeEvent());
-      await RsvpRepo.save({
-        id: "rsvp-waitlisted",
-        eventId: "event-1",
-        userId: "user-admin",
-        status: "waitlisted",
-        createdAt: new Date("2026-05-10T08:00:00.000Z"),
-      });
-      await RsvpRepo.save({
-        id: "rsvp-going",
-        eventId: "event-1",
-        userId: "user-reader",
-        status: "going",
-        createdAt: new Date("2026-05-10T09:00:00.000Z"),
-      });
+      await seedEvent();
+      await seedRsvp("rsvp-waitlisted", "event-1", "user-admin", "waitlisted", new Date("2026-05-10T08:00:00.000Z"));
+      await seedRsvp("rsvp-going", "event-1", "user-reader", "going", new Date("2026-05-10T09:00:00.000Z"));
 
       const app = createComposedApp().getExpressApp();
       const agent = request.agent(app);
@@ -137,7 +153,7 @@ describe("Feature 12 — Attendee List (Sprint 2)", () => {
     });
 
     it("shows an empty-state message when no one has RSVPed", async () => {
-      await EventRepo.save(makeEvent());
+      await seedEvent();
       const app = createComposedApp().getExpressApp();
       const agent = request.agent(app);
       await loginAs("staff@app.test", agent);
@@ -148,14 +164,8 @@ describe("Feature 12 — Attendee List (Sprint 2)", () => {
     });
 
     it("does not list cancelled RSVPs in the attendee table", async () => {
-      await EventRepo.save(makeEvent());
-      await RsvpRepo.save({
-        id: "rsvp-cancelled",
-        eventId: "event-1",
-        userId: "user-reader",
-        status: "cancelled",
-        createdAt: new Date("2026-05-10T08:00:00.000Z"),
-      });
+      await seedEvent();
+      await seedRsvp("rsvp-cancelled", "event-1", "user-reader", "cancelled", new Date("2026-05-10T08:00:00.000Z"));
 
       const app = createComposedApp().getExpressApp();
       const agent = request.agent(app);
@@ -175,4 +185,3 @@ describe("Feature 12 — Attendee List (Sprint 2)", () => {
     await agent.get("/events/no-such-event/attendees").expect(404);
   });
 });
-  
