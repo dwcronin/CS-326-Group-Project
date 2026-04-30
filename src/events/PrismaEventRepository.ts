@@ -3,7 +3,6 @@
 import { prisma } from "../lib/prisma.js";
 import type { Event, EventUpdateFields, EventStatus, EventAttendeeSummary } from "./Event.js";
 import type { EventRepository } from "./EventRepository.js";
-import { DEMO_USERS } from "../auth/InMemoryUserRepository.js";
 
 function toEvent(row: {
   id: string;
@@ -132,18 +131,12 @@ export async function listAttendees(
     orderBy: { createdAt: "asc" },
   });
 
-  return rsvps
-    .map((rsvp) => {
-      const user = DEMO_USERS.find((candidate) => candidate.id === rsvp.userId);
-      if (!user) return null;
-      return {
-        userId: user.id,
-        email: user.email,
-        displayName: user.displayName,
-        rsvpId: rsvp.id,
-        rsvpStatus: rsvp.status as "going" | "waitlisted",
-        rsvpCreatedAt: rsvp.createdAt,
-      };
-    })
-    .filter((attendee): attendee is EventAttendeeSummary => attendee !== null);
+  return rsvps.map((rsvp) => ({
+    userId: rsvp.userId,
+    email: rsvp.userId, // Sprint 3: userId only — display name not available without user table
+    displayName: rsvp.userId,
+    rsvpId: rsvp.id,
+    rsvpStatus: rsvp.status as "going" | "waitlisted",
+    rsvpCreatedAt: rsvp.createdAt,
+  }));
 }
