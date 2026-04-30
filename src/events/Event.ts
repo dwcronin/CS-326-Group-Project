@@ -13,15 +13,15 @@ export type EventStatus =
   | "past";       // past event, no edits/RSVPs allowed (Feature 3)
 
 export interface Event {
-  id: string;                 // unique identifier, e.g. UUID
+  id: string;
   title: string;
   description: string;
   location: string;
   category: string;
   startDatetime: Date;
   endDatetime: Date;
-  capacity?: number;          // maximum attendees; no limit if absent
-  organizerId: string;        // matches User.id from the auth module
+  capacity?: number;
+  organizerId: string;
   status: EventStatus;
   createdAt: Date;
   updatedAt: Date;
@@ -37,11 +37,6 @@ export interface CreateEventInput {
   capacity?: number;
 }
 
-/**
- * The fields an organizer is allowed to change when editing.
- * All fields are optional — only the ones provided will be updated.
- * id, organizerId, status, createdAt are NOT editable through this type.
- */
 export interface EventUpdateFields {
   title?: string;
   description?: string;
@@ -52,20 +47,20 @@ export interface EventUpdateFields {
   capacity?: number;
 }
 
-export type EventCreateError =
-  | { name: "InvalidTitleError"; message: string }
-  | { name: "InvalidDescriptionError"; message: string }
-  | { name: "InvalidDateError"; message: string }
-  | { name: "InvalidCapacityError"; message: string }
-  | { name: "NotAuthorisedError"; message: string };
-
-/**
- * The named errors for Feature 3, as agreed in CONTRACTS.md.
- */
 export type EventEditError =
   | { name: "EventNotFoundError"; message: string }
   | { name: "NotAuthorisedError"; message: string }
   | { name: "EventNotEditableError"; message: string }
+  | { name: "InvalidTitleError"; message: string }
+  | { name: "InvalidDescriptionError"; message: string }
+  | { name: "InvalidDateError"; message: string }
+  | { name: "InvalidCapacityError"; message: string };
+
+/**
+ * The named errors for event creation and editing flows.
+ */
+export type EventCreateError =
+  | { name: "NotAuthorisedError"; message: string }
   | { name: "InvalidTitleError"; message: string }
   | { name: "InvalidDescriptionError"; message: string }
   | { name: "InvalidDateError"; message: string }

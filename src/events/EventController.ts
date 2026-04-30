@@ -132,6 +132,16 @@ class EventController implements IEventController {
     attendees: EventAttendeeSummary[],
     session: IAppBrowserSession,
   ): void {
+    if (this.isHtmxRequest(res)) {
+      res.render("events/partials/attendee-list", {
+        attendees,
+        eventId,
+        session,
+        layout: false,
+      });
+      return;
+    }
+
     res.render("events/attendees", {
       attendees,
       eventId,
