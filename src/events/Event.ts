@@ -27,10 +27,6 @@ export interface Event {
   updatedAt: Date;
 }
 
-/**
- * Input for creating a new event.
- * Organizer identity comes from the controller/session, not from the form.
- */
 export interface CreateEventInput {
   title: string;
   description: string;
