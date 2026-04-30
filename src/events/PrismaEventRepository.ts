@@ -1,10 +1,8 @@
 // src/events/PrismaEventRepository.ts
 
 import { prisma } from "../lib/prisma.js";
-import type { Event, EventUpdateFields } from "./Event.js";
+import type { Event, EventUpdateFields, EventStatus, EventAttendeeSummary } from "./Event.js";
 import type { EventRepository } from "./EventRepository.js";
-
-
 
 function toEvent(row: {
   id: string;
@@ -105,4 +103,40 @@ export async function findAll(): Promise<Event[]> {
     orderBy: { startDatetime: "asc" },
   });
   return rows.map(toEvent);
+}
+
+export async function updateStatus(
+  id: string,
+  status: EventStatus,
+): Promise<Event | null> {
+  try {
+    const row = await prisma.event.update({
+      where: { id },
+      data: { status },
+    });
+    return toEvent(row);
+  } catch {
+    return null;
+  }
+}
+
+export async function listAttendees(
+  id: string,
+): Promise<EventAttendeeSummary[]> {
+  const rsvps = await prisma.rsvp.findMany({
+    where: {
+      eventId: id,
+      status: { in: ["going", "waitlisted"] },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
+  return rsvps.map((rsvp) => ({
+    userId: rsvp.userId,
+    email: rsvp.userId, // Sprint 3: userId only — display name not available without user table
+    displayName: rsvp.userId,
+    rsvpId: rsvp.id,
+    rsvpStatus: rsvp.status as "going" | "waitlisted",
+    rsvpCreatedAt: rsvp.createdAt,
+  }));
 }

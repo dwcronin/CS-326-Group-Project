@@ -46,3 +46,12 @@ model Rsvp {
 
   @@unique([eventId, userId])
 }
+
+model SavedEvent {
+  id        String   @id @default(uuid())
+  eventId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@unique([eventId, userId])
+}

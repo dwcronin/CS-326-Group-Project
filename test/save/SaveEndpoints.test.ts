@@ -1,15 +1,15 @@
 // test/save/SaveEndpoints.test.ts
 //
 // SuperTest endpoint tests for Feature 14 (Save for Later).
-// Tests hit the real Express app with the in-memory data layer.
-// DEMO_EVENTS in InMemoryEventRepository pre-loads:
+// Tests hit the real Express app with Prisma-backed repositories.
+// TEST_EVENTS from test/setup.ts pre-loads:
 //   - event-published-1:  "Spring Showcase"      (published, future)
 //   - event-cancelled-1:  "Cancelled Workshop"   (cancelled)
 //   - event-draft-1:      "Draft Planning Session" (draft)
 
 import request from "supertest";
 import { createComposedApp } from "../../src/composition";
-import * as SaveRepo from "../../src/save/InMemorySaveRepository";
+import { seedTestData, cleanupTestData, disconnectPrisma } from "../setup";
 
 type ExpressApp = Parameters<typeof request>[0];
 
@@ -30,14 +30,22 @@ describe("POST /events/:id/save and GET /saved-events — save endpoints", () =>
   let staffCookie: string[];
 
   beforeAll(async () => {
+    await cleanupTestData();
+    await seedTestData();
     app = createComposedApp().getExpressApp();
     userCookie  = await loginAs(app, "user@app.test");
     staffCookie = await loginAs(app, "staff@app.test");
   });
 
   // Clear saves between tests so toggle state is predictable.
-  beforeEach(() => {
-    SaveRepo._clearForTesting();
+  beforeEach(async () => {
+    await cleanupTestData();
+    await seedTestData();
+  });
+
+  afterAll(async () => {
+    await cleanupTestData();
+    await disconnectPrisma();
   });
 
   // ── Happy path ─────────────────────────────────────────────────
