@@ -19,7 +19,7 @@ import * as PrismaRsvpRepo from "./rsvp/PrismaRsvpRepository.js";
 import { RsvpService } from "./rsvp/RsvpService.js";
 import { CreateRsvpController } from "./rsvp/RsvpController.js";
 
-import * as SaveRepo from "./save/InMemorySaveRepository.js";
+import * as SaveRepo from "./save/PrismaSaveRepository.js";
 import { SaveService } from "./save/SaveService.js";
 import { CreateSaveController } from "./save/SaveController.js";
 

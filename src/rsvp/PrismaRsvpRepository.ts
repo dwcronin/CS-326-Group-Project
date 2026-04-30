@@ -2,6 +2,10 @@
 
 import { prisma } from "../lib/prisma.js";
 import type { Rsvp, RsvpStatus } from "./Rsvp.js";
+<<<<<<< HEAD
+=======
+import type { RsvpRepository } from "./RsvpRepository.js";
+>>>>>>> e6eb672ab5f441f7c4dd9df546cd4c3570f7350e
 
 function toRsvp(row: {
   id: string;
@@ -17,6 +21,14 @@ function toRsvp(row: {
     status: row.status as RsvpStatus,
     createdAt: row.createdAt,
   };
+}
+
+export async function listByEventId(eventId: string): Promise<Rsvp[]> {
+  const rows = await prisma.rsvp.findMany({
+    where: { eventId },
+    orderBy: { createdAt: "asc" },
+  });
+  return rows.map(toRsvp);
 }
 
 export async function findByEventAndUser(

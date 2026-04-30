@@ -1,7 +1,12 @@
 // src/events/PrismaEventRepository.ts
 
 import { prisma } from "../lib/prisma.js";
+<<<<<<< HEAD
 import type { Event, EventUpdateFields } from "./Event.js";
+=======
+import type { Event, EventUpdateFields, EventStatus, EventAttendeeSummary } from "./Event.js";
+import type { EventRepository } from "./EventRepository.js";
+>>>>>>> e6eb672ab5f441f7c4dd9df546cd4c3570f7350e
 
 function toEvent(row: {
   id: string;
@@ -105,20 +110,49 @@ export async function findAll(): Promise<Event[]> {
 
 export async function updateStatus(
   id: string,
+<<<<<<< HEAD
   status: Event["status"],
+=======
+  status: EventStatus,
+>>>>>>> e6eb672ab5f441f7c4dd9df546cd4c3570f7350e
 ): Promise<Event | null> {
   try {
     const row = await prisma.event.update({
       where: { id },
       data: { status },
     });
+<<<<<<< HEAD
 
+=======
+>>>>>>> e6eb672ab5f441f7c4dd9df546cd4c3570f7350e
     return toEvent(row);
   } catch {
     return null;
   }
 }
 
+<<<<<<< HEAD
 export async function listAttendees() {
   return [];
+=======
+export async function listAttendees(
+  id: string,
+): Promise<EventAttendeeSummary[]> {
+  const rsvps = await prisma.rsvp.findMany({
+    where: {
+      eventId: id,
+      status: { in: ["going", "waitlisted"] },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
+  return rsvps.map((rsvp) => ({
+    userId: rsvp.userId,
+    email: rsvp.userId, // Sprint 3: userId only — display name not available without user table
+    displayName: rsvp.userId,
+    rsvpId: rsvp.id,
+    rsvpStatus: rsvp.status as "going" | "waitlisted",
+    rsvpCreatedAt: rsvp.createdAt,
+  }));
+>>>>>>> e6eb672ab5f441f7c4dd9df546cd4c3570f7350e
 }
