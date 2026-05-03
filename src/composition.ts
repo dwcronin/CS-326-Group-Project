@@ -38,7 +38,7 @@ export function createComposedApp(logger?: ILoggingService): IApp {
 
   // Event feature wiring
   const eventService = new EventService(EventRepo);
-  const eventController = CreateEventController(eventService);
+  const eventController = CreateEventController(eventService, rsvpService);
 
   // RSVP feature wiring
   // RsvpService takes both repos — it needs EventRepo to check event status
