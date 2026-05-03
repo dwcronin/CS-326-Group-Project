@@ -322,7 +322,7 @@ class EventController implements IEventController {
       return;
     }
 
-    const result = await this.service.getEventForEdit(
+    const result = await this.service.getEventDetails(
       user.userId,
       user.role,
       eventId,
