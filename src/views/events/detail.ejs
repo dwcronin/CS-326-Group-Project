@@ -40,6 +40,10 @@
           Edit Event
         </a>
       <% } %>
+
+      <% if (session.authenticatedUser && session.authenticatedUser.role === "user" && event.status === "published") { %>
+        <%- include('../rsvp/button', { eventId: event.id, rsvpStatus }) %>
+        <% } %>
     </div>
   </div>
 </div>
