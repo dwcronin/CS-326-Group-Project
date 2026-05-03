@@ -164,6 +164,30 @@ export class EventService {
     return Ok(event);
   }
 
+    async getEventDetails(
+    actingUserId: string,
+    actingUserRole: "admin" | "staff" | "user",
+    eventId: string
+  ): Promise<Result<Event, EventEditError>> {
+    const event = await this.repo.findById(eventId);
+
+    if (!event) {
+      return Err({ name: "EventNotFoundError", message: "Event not found." } as const);
+    }
+
+    const isAdmin = actingUserRole === "admin";
+    const isOrganizer = event.organizerId === actingUserId;
+
+    if (event.status === "draft" && !isAdmin && !isOrganizer) {
+      return Err({
+        name: "EventNotFoundError",
+        message: "Event not found.",
+      } as const);
+    }
+
+    return Ok(event);
+  }
+
   private validateFields(fields: EventUpdateFields): EventEditError | null {
     if (fields.title !== undefined) {
       const t = fields.title.trim();

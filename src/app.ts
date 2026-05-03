@@ -377,6 +377,23 @@ class ExpressApp implements IApp {
     );
 
     this.app.get(
+      "/events/:id",
+      asyncHandler(async (req, res) => {
+        if (!this.requireAuthenticated(req, res)) {
+          return;
+        }
+
+        const session = touchAppSession(req.session as AppSessionStore);
+        await this.eventController.showEventDetail(
+          res,
+          String(req.params.id),
+          session,
+          req.session as AppSessionStore,
+        );
+      }),
+    );
+
+    this.app.get(
       "/events",
       asyncHandler(async (req, res) => {
         if (!this.requireAuthenticated(req, res)) return;
@@ -388,7 +405,13 @@ class ExpressApp implements IApp {
           ? await this.saveController.getSavedEventIds(user.userId)
           : [];
 
-        await this.searchController.showEventList(res, rawQuery, session, savedIds, this.isHtmxRequest(req));
+        await this.searchController.showEventList(
+          res,
+          rawQuery,
+          session,
+          savedIds,
+          this.isHtmxRequest(req),
+        );
       }),
     );
 

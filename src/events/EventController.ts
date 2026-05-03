@@ -31,6 +31,13 @@ export interface IEventController {
     store: AppSessionStore,
   ): Promise<void>;
 
+  showEventDetail(
+    res: Response,
+    eventId: string,
+    session: IAppBrowserSession,
+    store: AppSessionStore,
+  ): Promise<void>;
+
   showEditForm(
     res: Response,
     eventId: string,
@@ -300,6 +307,41 @@ class EventController implements IEventController {
     }
 
     res.redirect(`/events/${createdEvent.id}/edit`);
+  }
+
+  async showEventDetail(
+    res: Response,
+    eventId: string,
+    session: IAppBrowserSession,
+    _store: AppSessionStore,
+  ): Promise<void> {
+    const user = session.authenticatedUser;
+
+    if (!user) {
+      res.redirect("/login");
+      return;
+    }
+
+    const result = await this.service.getEventDetails(
+      user.userId,
+      user.role,
+      eventId,
+    );
+
+    if (result.ok === false) {
+      const error = this.toEditError(result);
+
+      res.status(this.mapEditErrorStatus(error)).render("partials/error", {
+        message: error.message,
+        layout: false,
+      });
+      return;
+    }
+
+    res.render("events/detail", {
+      event: result.value,
+      session,
+    });
   }
 
   async showEditForm(
