@@ -24,7 +24,8 @@
       <% } %>
     </div>
 
-    <div class="mt-6 flex gap-3 flex-wrap">
+    <div class="mt-6 flex gap-3 flex-wrap items-center">
+      <!-- Back -->
       <a
         href="/events"
         class="px-4 py-2 rounded-lg bg-white border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 no-underline"
@@ -32,6 +33,7 @@
         Back to Events
       </a>
 
+      <!-- Edit (admin/staff only) -->
       <% if (session.authenticatedUser && (session.authenticatedUser.role === "admin" || session.authenticatedUser.role === "staff")) { %>
         <a
           href="/events/<%= event.id %>/edit"
@@ -39,6 +41,18 @@
         >
           Edit Event
         </a>
+      <% } %>
+
+      <!-- ✅ RSVP (users only + published events) -->
+      <% if (session.authenticatedUser && session.authenticatedUser.role === "user" && event.status === "published") { %>
+        <form method="post" action="/events/<%= event.id %>/rsvp">
+          <button
+            type="submit"
+            class="px-4 py-2 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700"
+          >
+            RSVP
+          </button>
+        </form>
       <% } %>
     </div>
   </div>
