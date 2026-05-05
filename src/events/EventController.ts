@@ -6,6 +6,7 @@ import type {
   AppSessionStore,
 } from "../session/AppSession.js";
 import type { EventService } from "./EventService";
+import type { RsvpService } from "../rsvp/RsvpService.js";
 import type {
   Event,
   CreateEventInput,
@@ -78,7 +79,10 @@ export interface IEventController {
 }
 
 class EventController implements IEventController {
-  constructor(private readonly service: EventService) {}
+  constructor(
+    private readonly service: EventService,
+    private readonly rsvpService: RsvpService,
+  ) {}
 
   private isHtmxRequest(res: Response): boolean {
     return res.req.get("HX-Request") === "true";
@@ -316,7 +320,6 @@ class EventController implements IEventController {
     _store: AppSessionStore,
   ): Promise<void> {
     const user = session.authenticatedUser;
-
     if (!user) {
       res.redirect("/login");
       return;
@@ -330,7 +333,6 @@ class EventController implements IEventController {
 
     if (result.ok === false) {
       const error = this.toEditError(result);
-
       res.status(this.mapEditErrorStatus(error)).render("partials/error", {
         message: error.message,
         layout: false,
@@ -338,8 +340,15 @@ class EventController implements IEventController {
       return;
     }
 
+    // Only members can RSVP — get their current status for the button
+    // Admins and staff don't see the RSVP button at all
+    const rsvpStatus = user.role === "user"
+      ? await this.rsvpService.getRsvpStatus(user.userId, eventId)
+      : null;
+
     res.render("events/detail", {
-      event: result.value,
+      event:      result.value,
+      rsvpStatus,
       session,
     });
   }
@@ -671,6 +680,9 @@ class EventController implements IEventController {
   }
 }
 
-export function CreateEventController(service: EventService): IEventController {
-  return new EventController(service);
+export function CreateEventController(
+  service: EventService,
+  rsvpService: RsvpService,
+): IEventController {
+  return new EventController(service, rsvpService);
 }

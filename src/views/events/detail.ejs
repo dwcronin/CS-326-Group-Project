@@ -43,17 +43,9 @@
         </a>
       <% } %>
 
-      <!-- ✅ RSVP BUTTON (users only + published events) -->
       <% if (session.authenticatedUser && session.authenticatedUser.role === "user" && event.status === "published") { %>
-        <form method="post" action="/events/<%= event.id %>/rsvp">
-          <button
-            type="submit"
-            class="px-4 py-2 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700"
-          >
-            RSVP
-          </button>
-        </form>
-      <% } %>
+        <%- include('../rsvp/button', { eventId: event.id, rsvpStatus }) %>
+        <% } %>
     </div>
   </div>
 </div>
