@@ -47,6 +47,16 @@
 
           <!-- Description excerpt -->
           <p class="text-sm text-slate-600 m-0 line-clamp-2"><%= event.description %></p>
+
+          <!-- View details link -->
+          <div class="mt-3">
+            <a
+              href="/events/<%= event.id %>"
+              class="text-blue-600 text-sm font-semibold hover:underline no-underline"
+            >
+              View details
+            </a>
+          </div>
         </div>
 
         <!-- Save button (members only) -->
