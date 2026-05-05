@@ -4,13 +4,21 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Project Starter</title>
+
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+
+    <style>
+      [x-cloak] {
+        display: none !important;
+      }
+    </style>
   </head>
-  <body class="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 text-slate-900 p-6">
+
+  <body class="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 text-slate-900 p-4 sm:p-6">
     <div class="max-w-5xl mx-auto">
-      <nav class="flex items-center justify-between gap-3 mb-6 flex-wrap">
+      <nav class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <a
           href="<%= session?.authenticatedUser ? '/home' : '/login' %>"
           class="inline-flex items-center gap-2.5 px-4 py-3 rounded-xl bg-white border border-slate-200 shadow-lg font-bold text-slate-900 no-underline"
@@ -35,7 +43,7 @@
               <a href="/admin/users" class="text-blue-700 font-semibold no-underline hover:underline">Manage Users</a>
             <% } %>
 
-            <span class="text-slate-500">
+            <span class="text-slate-500 text-sm">
               Signed in as <strong class="text-slate-700"><%= session.authenticatedUser.displayName %></strong>
               (<%= session.authenticatedUser.role %>)
             </span>

@@ -1,10 +1,140 @@
-<div class="max-w-2xl mx-auto py-8 px-4">
-  <h1 class="text-2xl font-medium text-gray-900 mb-2">Create Event</h1>
-  <p class="text-sm text-gray-600 mb-6">
-    Create a new event as a draft or publish it immediately.
-  </p>
-
-  <div id="create-event-panel">
-    <%- include("./partials/create-form", { fields, errors }) %>
+<div class="max-w-3xl mx-auto">
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-slate-900">Create Event</h1>
+    <p class="text-slate-500 text-sm mt-1">Create a draft or publish an event for users to discover.</p>
   </div>
+
+  <% if (errors && errors.length > 0) { %>
+    <div class="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
+      <% errors.forEach(function(error) { %>
+        <p class="text-sm font-medium"><%= error %></p>
+      <% }) %>
+    </div>
+  <% } %>
+
+  <form
+    method="post"
+    action="/events"
+    class="rounded-2xl bg-white border border-slate-200 shadow-sm p-6 space-y-5"
+    x-data="{
+      title: '<%= fields.title ?? "" %>',
+      description: '<%= fields.description ?? "" %>',
+      capacity: '<%= fields.capacity ?? "" %>',
+      maxTitle: 100,
+      maxDescription: 2000
+    }"
+  >
+    <div>
+      <label class="block text-sm font-semibold text-slate-700 mb-1">Title</label>
+      <input
+        name="title"
+        type="text"
+        maxlength="100"
+        x-model="title"
+        value="<%= fields.title ?? "" %>"
+        class="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        required
+      />
+      <p class="text-xs text-slate-500 mt-1">
+        <span x-text="title.length"></span> / <span x-text="maxTitle"></span> characters
+      </p>
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold text-slate-700 mb-1">Description</label>
+      <textarea
+        name="description"
+        maxlength="2000"
+        rows="5"
+        x-model="description"
+        class="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        required
+      ><%= fields.description ?? "" %></textarea>
+      <p class="text-xs mt-1" :class="description.length > 1800 ? 'text-amber-600' : 'text-slate-500'">
+        <span x-text="description.length"></span> / <span x-text="maxDescription"></span> characters
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1">Location</label>
+        <input
+          name="location"
+          type="text"
+          value="<%= fields.location ?? "" %>"
+          class="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          required
+        />
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1">Category</label>
+        <input
+          name="category"
+          type="text"
+          value="<%= fields.category ?? "" %>"
+          class="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          required
+        />
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1">Start Date/Time</label>
+        <input
+          name="startDatetime"
+          type="datetime-local"
+          value="<%= fields.startDatetime ?? "" %>"
+          class="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          required
+        />
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1">End Date/Time</label>
+        <input
+          name="endDatetime"
+          type="datetime-local"
+          value="<%= fields.endDatetime ?? "" %>"
+          class="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          required
+        />
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold text-slate-700 mb-1">Capacity</label>
+      <input
+        name="capacity"
+        type="number"
+        min="1"
+        x-model="capacity"
+        value="<%= fields.capacity ?? "" %>"
+        placeholder="Leave blank for no limit"
+        class="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+      <p class="text-xs text-slate-500 mt-1" x-show="capacity === ''">No limit will be applied.</p>
+    </div>
+
+    <div class="flex flex-col sm:flex-row gap-3 pt-2">
+      <button
+        type="submit"
+        name="intent"
+        value="draft"
+        class="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-slate-700 text-white font-semibold hover:bg-slate-800"
+      >
+        Save Draft
+      </button>
+
+      <button
+        type="submit"
+        name="intent"
+        value="publish"
+        class="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700"
+      >
+        Create & Publish
+      </button>
+    </div>
+  </form>
 </div>
