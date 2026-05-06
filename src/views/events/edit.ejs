@@ -32,6 +32,15 @@
             });
           });
         });
+      },
+      handleCancel(href) {
+        if (this.dirty) {
+          if (confirm('You have unsaved changes. Leave anyway?')) {
+            window.location.href = href;
+          }
+        } else {
+          window.location.href = href;
+        }
       }
     }"
     x-on:submit="dirty = false"
@@ -161,18 +170,10 @@
       >
         Save changes
       </button>
-      
+      <a
         href="/events/<%= event.id %>"
         class="w-full sm:w-auto px-6 py-2.5 rounded-lg border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 transition-colors text-center no-underline"
-        x-on:click.prevent="
-          if (dirty) {
-            if (confirm('You have unsaved changes. Leave anyway?')) {
-              window.location.href = $el.href;
-            }
-          } else {
-            window.location.href = $el.href;
-          }
-        "
+        x-on:click.prevent="handleCancel($el.href)"
       >
         Cancel
       </a>
