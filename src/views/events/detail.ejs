@@ -1,51 +1,112 @@
-<div class="space-y-6">
-  <div class="rounded-xl bg-white border border-slate-200 shadow-sm p-6">
-    <div class="flex items-start justify-between gap-4">
+<div class="max-w-4xl mx-auto space-y-6">
+  <div class="rounded-2xl bg-white border border-slate-200 shadow-sm p-6 md:p-8">
+    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
       <div>
-        <h1 class="text-3xl font-bold text-slate-900"><%= event.title %></h1>
-        <p class="mt-2 text-slate-600"><%= event.description %></p>
+        <div class="flex items-center gap-2 flex-wrap mb-3">
+          <span class="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide bg-blue-100 text-blue-700">
+            <%= event.category %>
+          </span>
+
+          <span class="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide bg-slate-100 text-slate-700">
+            <%= event.status %>
+          </span>
+        </div>
+
+        <h1 class="text-3xl md:text-4xl font-bold text-slate-900">
+          <%= event.title %>
+        </h1>
+
+        <p class="mt-3 text-slate-600 leading-relaxed">
+          <%= event.description %>
+        </p>
+      </div>
+    </div>
+
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+      <div class="rounded-xl bg-slate-50 border border-slate-200 p-4">
+        <p class="text-slate-500 font-medium">Location</p>
+        <p class="text-slate-900 font-semibold mt-1">
+          <%= event.location %>
+        </p>
       </div>
 
-      <span class="px-3 py-1 rounded-full text-sm font-semibold bg-slate-100 text-slate-700">
-        <%= event.status %>
-      </span>
+      <div class="rounded-xl bg-slate-50 border border-slate-200 p-4">
+        <p class="text-slate-500 font-medium">Capacity</p>
+
+        <% if (event.capacity) { %>
+          <p class="text-slate-900 font-semibold mt-1">
+            <%= event.capacity %>
+          </p>
+        <% } else { %>
+          <p class="text-slate-900 font-semibold mt-1">
+            No limit
+          </p>
+        <% } %>
+      </div>
+
+      <div class="rounded-xl bg-slate-50 border border-slate-200 p-4">
+        <p class="text-slate-500 font-medium">Starts</p>
+        <p class="text-slate-900 font-semibold mt-1">
+          <%= event.startDatetime.toLocaleString() %>
+        </p>
+      </div>
+
+      <div class="rounded-xl bg-slate-50 border border-slate-200 p-4">
+        <p class="text-slate-500 font-medium">Ends</p>
+        <p class="text-slate-900 font-semibold mt-1">
+          <%= event.endDatetime.toLocaleString() %>
+        </p>
+      </div>
     </div>
 
-    <div class="mt-6 grid gap-3 text-sm text-slate-700">
-      <p><strong>Location:</strong> <%= event.location %></p>
-      <p><strong>Category:</strong> <%= event.category %></p>
-      <p><strong>Starts:</strong> <%= event.startDatetime.toLocaleString() %></p>
-      <p><strong>Ends:</strong> <%= event.endDatetime.toLocaleString() %></p>
-
-      <% if (event.capacity) { %>
-        <p><strong>Capacity:</strong> <%= event.capacity %></p>
-      <% } else { %>
-        <p><strong>Capacity:</strong> No limit</p>
-      <% } %>
-    </div>
-
-    <div class="mt-6 flex gap-3 flex-wrap items-center">
-      <!-- Back -->
+    <div
+      class="mt-8 flex flex-col sm:flex-row gap-3 sm:items-center"
+      x-data="{ openInfo: false }"
+    >
+      <!-- Back button -->
       <a
         href="/events"
-        class="px-4 py-2 rounded-lg bg-white border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 no-underline"
+        class="inline-flex justify-center px-4 py-2.5 rounded-lg bg-white border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 no-underline"
       >
         Back to Events
       </a>
 
-      <!-- Edit (admin/staff only) -->
+      <!-- Edit button -->
       <% if (session.authenticatedUser && (session.authenticatedUser.role === "admin" || session.authenticatedUser.role === "staff")) { %>
         <a
           href="/events/<%= event.id %>/edit"
-          class="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 no-underline"
+          class="inline-flex justify-center px-4 py-2.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 no-underline"
         >
           Edit Event
         </a>
       <% } %>
 
+      <!-- RSVP BUTTON PARTIAL (RESTORED) -->
       <% if (session.authenticatedUser && session.authenticatedUser.role === "user" && event.status === "published") { %>
         <%- include('../rsvp/button', { eventId: event.id, rsvpStatus }) %>
-        <% } %>
+      <% } %>
+
+      <!-- Small Alpine interaction -->
+      <button
+        type="button"
+        x-on:click="openInfo = !openInfo"
+        class="text-sm font-semibold text-slate-600 hover:text-slate-900"
+      >
+        <span x-show="!openInfo">Show extra info</span>
+        <span x-show="openInfo">Hide extra info</span>
+      </button>
+    </div>
+
+    <!-- Alpine expandable section -->
+    <div
+      x-show="openInfo"
+      x-cloak
+      class="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700"
+    >
+      <p>
+        This event detail page supports RSVP interactions, responsive layouts,
+        and Alpine.js client-side interactivity for Sprint 4.
+      </p>
     </div>
   </div>
 </div>
