@@ -1,5 +1,7 @@
 // src/events/PrismaEventRepository.ts
-
+// Sprint 3: This repository is fully backed by Prisma.
+// listAttendees joins RSVP records with DEMO_USERS for display names.
+// updateStatus and listByEventId are implemented via Prisma queries.
 import { prisma } from "../lib/prisma.js";
 import type { Event, EventUpdateFields, EventStatus, EventAttendeeSummary } from "./Event.js";
 import type { EventRepository } from "./EventRepository.js";
