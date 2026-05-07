@@ -14,7 +14,11 @@
 
 <!-- Search form -->
 <form method="GET" action="/events" class="mb-8">
-  <div class="relative">
+  <div
+    x-data="{ query: '' }"
+    x-init="query = $refs.input.value"
+    class="relative"
+  >
     <!-- Search icon -->
     <div class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -23,16 +27,30 @@
     </div>
 
     <input
+      x-ref="input"
+      x-model="query"
       type="text"
       name="q"
-      value="<%= query %>"
       placeholder="Search by title, description, location, or category…"
-      class="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-xl text-sm shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+      class="w-full pl-12 pr-10 py-3 border border-slate-300 rounded-xl text-sm shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
       hx-get="/events"
       hx-trigger="input changed delay:300ms, search"
       hx-target="#event-results"
       hx-push-url="true"
     />
+
+    <!-- Clear button — appears inside field when query is non-empty -->
+    <button
+      type="button"
+      x-show="query.length > 0"
+      x-on:click="query = ''; $nextTick(() => $refs.input.dispatchEvent(new InputEvent('input')))"
+      class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
+      aria-label="Clear search"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
   </div>
 </form>
 
