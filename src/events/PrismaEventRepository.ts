@@ -1,16 +1,8 @@
 // src/events/PrismaEventRepository.ts
 
 import { prisma } from "../lib/prisma.js";
-import { DEMO_USERS } from "../auth/InMemoryUserRepository.js";
-import type {
-  Event,
-  EventAttendeeSummary,
-  EventStatus,
-  EventUpdateFields,
-} from "./Event.js";
+import type { Event, EventUpdateFields, EventStatus, EventAttendeeSummary } from "./Event.js";
 import type { EventRepository } from "./EventRepository.js";
-
-
 
 function toEvent(row: {
   id: string;
@@ -106,6 +98,13 @@ export async function update(
   }
 }
 
+export async function findAll(): Promise<Event[]> {
+  const rows = await prisma.event.findMany({
+    orderBy: { startDatetime: "asc" },
+  });
+  return rows.map(toEvent);
+}
+
 export async function updateStatus(
   id: string,
   status: EventStatus,
@@ -121,35 +120,23 @@ export async function updateStatus(
   }
 }
 
-export async function listAttendees(eventId: string): Promise<EventAttendeeSummary[]> {
-  const rows = await prisma.rsvp.findMany({
+export async function listAttendees(
+  id: string,
+): Promise<EventAttendeeSummary[]> {
+  const rsvps = await prisma.rsvp.findMany({
     where: {
-      eventId,
-      status: { in: ["going", "waitlisted", "cancelled"] },
+      eventId: id,
+      status: { in: ["going", "waitlisted"] },
     },
     orderBy: { createdAt: "asc" },
   });
 
-  return rows
-    .map((rsvp) => {
-      const user = DEMO_USERS.find((candidate) => candidate.id === rsvp.userId);
-      if (!user) return null;
-
-      return {
-        userId: user.id,
-        email: user.email,
-        displayName: user.displayName,
-        rsvpId: rsvp.id,
-        rsvpStatus: rsvp.status as EventAttendeeSummary["rsvpStatus"],
-        rsvpCreatedAt: rsvp.createdAt,
-      };
-    })
-    .filter((attendee): attendee is EventAttendeeSummary => attendee !== null);
-}
-
-export async function findAll(): Promise<Event[]> {
-  const rows = await prisma.event.findMany({
-    orderBy: { startDatetime: "asc" },
-  });
-  return rows.map(toEvent);
+  return rsvps.map((rsvp) => ({
+    userId: rsvp.userId,
+    email: rsvp.userId, // Sprint 3: userId only — display name not available without user table
+    displayName: rsvp.userId,
+    rsvpId: rsvp.id,
+    rsvpStatus: rsvp.status as "going" | "waitlisted",
+    rsvpCreatedAt: rsvp.createdAt,
+  }));
 }

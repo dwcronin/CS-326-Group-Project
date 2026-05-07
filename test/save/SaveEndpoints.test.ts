@@ -1,50 +1,17 @@
 // test/save/SaveEndpoints.test.ts
 //
 // SuperTest endpoint tests for Feature 14 (Save for Later).
-// Tests hit the real Express app with the in-memory data layer.
-// DEMO_EVENTS in InMemoryEventRepository pre-loads:
+// Tests hit the real Express app with Prisma-backed repositories.
+// TEST_EVENTS from test/setup.ts pre-loads:
 //   - event-published-1:  "Spring Showcase"      (published, future)
 //   - event-cancelled-1:  "Cancelled Workshop"   (cancelled)
 //   - event-draft-1:      "Draft Planning Session" (draft)
 
 import request from "supertest";
 import { createComposedApp } from "../../src/composition";
-import { prisma } from "../../src/lib/prisma.js";
-import * as EventRepo from "../../src/events/PrismaEventRepository";
-import * as SaveRepo from "../../src/save/InMemorySaveRepository";
-import type { Event } from "../../src/events/Event";
+import { seedTestData, cleanupTestData, disconnectPrisma } from "../setup";
 
 type ExpressApp = Parameters<typeof request>[0];
-
-function makeEvent(overrides: Partial<Event> = {}): Event {
-  return {
-    id: "event-published-1",
-    title: "Spring Showcase",
-    description: "Open event for the whole community.",
-    location: "Main Hall",
-    category: "Showcase",
-    startDatetime: new Date("2026-05-10T18:00:00.000Z"),
-    endDatetime: new Date("2026-05-10T21:00:00.000Z"),
-    capacity: 100,
-    organizerId: "user-staff",
-    status: "published",
-    createdAt: new Date("2026-03-21T16:00:00.000Z"),
-    updatedAt: new Date("2026-03-21T16:00:00.000Z"),
-    ...overrides,
-  };
-}
-
-async function seedEvents(): Promise<void> {
-  await prisma.rsvp.deleteMany();
-  await prisma.event.deleteMany();
-  await EventRepo.save(makeEvent());
-  await EventRepo.save(makeEvent({
-    id: "event-cancelled-1",
-    title: "Cancelled Workshop",
-    description: "Example cancelled event.",
-    status: "cancelled",
-  }));
-}
 
 async function loginAs(
   app: ExpressApp,
@@ -63,6 +30,8 @@ describe("POST /events/:id/save and GET /saved-events — save endpoints", () =>
   let staffCookie: string[];
 
   beforeAll(async () => {
+    await cleanupTestData();
+    await seedTestData();
     app = createComposedApp().getExpressApp();
     userCookie  = await loginAs(app, "user@app.test");
     staffCookie = await loginAs(app, "staff@app.test");
@@ -70,13 +39,13 @@ describe("POST /events/:id/save and GET /saved-events — save endpoints", () =>
 
   // Clear saves between tests so toggle state is predictable.
   beforeEach(async () => {
-    SaveRepo._clearForTesting();
-    await seedEvents();
+    await cleanupTestData();
+    await seedTestData();
   });
 
   afterAll(async () => {
-    await prisma.rsvp.deleteMany();
-    await prisma.event.deleteMany();
+    await cleanupTestData();
+    await disconnectPrisma();
   });
 
   // ── Happy path ─────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 import request from "supertest";
 import { createComposedApp } from "../../src/composition";
-import { prisma } from "../../src/lib/prisma.js";
+import { cleanupTestData, disconnectPrisma } from "../setup";
 import * as EventRepo from "../../src/events/PrismaEventRepository";
 
 function app() {
@@ -21,13 +21,11 @@ async function loginAsAdmin(agent: request.Agent) {
 
 describe("Event creation routes Sprint 2 SuperTest coverage", () => {
   beforeEach(async () => {
-    await prisma.rsvp.deleteMany();
-    await prisma.event.deleteMany();
+    await cleanupTestData();
   });
 
   afterAll(async () => {
-    await prisma.rsvp.deleteMany();
-    await prisma.event.deleteMany();
+    await disconnectPrisma();
   });
 
   test("GET /events/new allows admin to view event creation page", async () => {

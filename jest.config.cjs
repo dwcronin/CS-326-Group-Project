@@ -8,6 +8,7 @@ module.exports = {
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
+  setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
   clearMocks: true,
   collectCoverageFrom: ['src/**/*.ts'],
 }
