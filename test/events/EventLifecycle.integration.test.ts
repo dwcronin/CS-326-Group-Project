@@ -1,11 +1,6 @@
 import request from "supertest";
 import { createComposedApp } from "../../src/composition";
-<<<<<<< HEAD
-import { prisma } from "../../src/lib/prisma.js";
-import * as EventRepo from "../../src/events/PrismaEventRepository";
-=======
 import { prisma } from "../../src/lib/prisma";
->>>>>>> dev
 import type { Event } from "../../src/events/Event";
 
 function makeEvent(overrides: Partial<Event> = {}): Event {
@@ -60,12 +55,6 @@ describe("Event lifecycle integration", () => {
     await seedEvent({ id: "event-draft-1", status: "draft" });
     await seedEvent({ id: "event-published-1", status: "published" });
     await seedEvent({ id: "event-admin-owned-1", organizerId: "user-admin", status: "published" });
-  });
-
-  afterAll(async () => {
-    await prisma.rsvp.deleteMany();
-    await prisma.event.deleteMany();
-    await prisma.$disconnect();
   });
 
   afterAll(async () => {

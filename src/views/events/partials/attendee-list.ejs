@@ -4,24 +4,6 @@
       No active attendees yet.
     </div>
   <% } else { %>
-<<<<<<< HEAD
-    <%
-      const going      = attendees.filter(a => a.rsvpStatus === 'going');
-      const waitlisted = attendees.filter(a => a.rsvpStatus === 'waitlisted');
-      const cancelled  = attendees.filter(a => a.rsvpStatus === 'cancelled');
-    %>
-
-    <% if (going.length > 0) { %>
-      <h3 class="text-sm font-semibold text-gray-700 mb-2">
-        Going
-        <span class="ml-1 rounded-full bg-green-100 text-green-800 px-2 py-0.5 text-xs font-medium">
-          <%= going.length %>
-        </span>
-      </h3>
-      <div class="overflow-x-auto rounded-lg border border-gray-200 bg-white mb-6">
-        <table class="min-w-full divide-y divide-gray-200 text-sm">
-          <thead class="bg-gray-50">
-=======
     <div class="overflow-x-auto rounded-lg border border-gray-200 bg-white">
       <table class="min-w-full divide-y divide-gray-200 text-sm">
         <thead class="bg-gray-50">
@@ -34,7 +16,6 @@
         </thead>
         <tbody class="divide-y divide-gray-100">
           <% attendees.forEach((attendee) => { %>
->>>>>>> dev
             <tr>
               <td class="px-4 py-3 text-gray-900"><%= attendee.displayName %></td>
               <td class="px-4 py-3 text-gray-700"><%= attendee.email %></td>
@@ -43,83 +24,9 @@
                 <%= attendee.rsvpCreatedAt.toLocaleString("en-US") %>
               </td>
             </tr>
-<<<<<<< HEAD
-          </thead>
-          <tbody class="divide-y divide-gray-100">
-            <% going.forEach(function(a) { %>
-              <tr>
-                <td class="px-4 py-3 text-gray-900"><%= a.displayName %></td>
-                <td class="px-4 py-3 text-gray-600"><%= a.email %></td>
-                <td class="px-4 py-3 text-gray-500"><%= a.rsvpCreatedAt.toLocaleString("en-US") %></td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
-    <% } %>
-
-    <% if (waitlisted.length > 0) { %>
-      <h3 class="text-sm font-semibold text-gray-700 mb-2">
-        Waitlisted
-        <span class="ml-1 rounded-full bg-amber-100 text-amber-800 px-2 py-0.5 text-xs font-medium">
-          <%= waitlisted.length %>
-        </span>
-      </h3>
-      <div class="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-        <table class="min-w-full divide-y divide-gray-200 text-sm">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-4 py-3 text-left font-medium text-gray-700">Name</th>
-              <th class="px-4 py-3 text-left font-medium text-gray-700">Email</th>
-              <th class="px-4 py-3 text-left font-medium text-gray-700">RSVPed at</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100">
-            <% waitlisted.forEach(function(a) { %>
-              <tr>
-                <td class="px-4 py-3 text-gray-900"><%= a.displayName %></td>
-                <td class="px-4 py-3 text-gray-600"><%= a.email %></td>
-                <td class="px-4 py-3 text-gray-500"><%= a.rsvpCreatedAt.toLocaleString("en-US") %></td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
-    <% } %>
-
-    <% if (cancelled.length > 0) { %>
-      <h3 class="text-sm font-semibold text-gray-700 mb-2 mt-6">
-        Cancelled
-        <span class="ml-1 rounded-full bg-gray-100 text-gray-700 px-2 py-0.5 text-xs font-medium">
-          <%= cancelled.length %>
-        </span>
-      </h3>
-      <div class="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-        <table class="min-w-full divide-y divide-gray-200 text-sm">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-4 py-3 text-left font-medium text-gray-700">Name</th>
-              <th class="px-4 py-3 text-left font-medium text-gray-700">Email</th>
-              <th class="px-4 py-3 text-left font-medium text-gray-700">RSVPed at</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100">
-            <% cancelled.forEach(function(a) { %>
-              <tr>
-                <td class="px-4 py-3 text-gray-900"><%= a.displayName %></td>
-                <td class="px-4 py-3 text-gray-600"><%= a.email %></td>
-                <td class="px-4 py-3 text-gray-500"><%= a.rsvpCreatedAt.toLocaleString("en-US") %></td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
-    <% } %>
-=======
           <% }) %>
         </tbody>
       </table>
     </div>
->>>>>>> dev
   <% } %>
 </section>

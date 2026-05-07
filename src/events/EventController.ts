@@ -680,16 +680,9 @@ class EventController implements IEventController {
   }
 }
 
-<<<<<<< HEAD
-export function CreateEventController(service: EventService): IEventController {
-  return new EventController(service);
-}
- 
-=======
 export function CreateEventController(
   service: EventService,
   rsvpService: RsvpService,
 ): IEventController {
   return new EventController(service, rsvpService);
 }
->>>>>>> dev
