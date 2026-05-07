@@ -7,7 +7,9 @@
       <%- include('../partials/error', { message: errors[0] }) %>
   <% } %>
 
-  <form 
+  <form
+    method="POST"
+    action="/events/<%= event.id %>/edit"
     hx-post="/events/<%= event.id %>/edit"
     hx-target="#edit-form-region"
     hx-swap="outerHTML"
@@ -132,4 +134,9 @@
       </a>
     </div>
   </form>
+
+  <p id="attendee-loading" class="htmx-indicator mt-8 text-sm text-gray-500 opacity-0 transition-opacity">
+    Loading attendees...
+  </p>
+  <section id="attendee-list-panel"></section>
 </div>

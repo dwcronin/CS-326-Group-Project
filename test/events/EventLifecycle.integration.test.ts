@@ -1,7 +1,7 @@
 import request from "supertest";
 import { createComposedApp } from "../../src/composition";
-import * as EventRepo from "../../src/events/InMemoryEventRepository";
-import * as RsvpRepo from "../../src/rsvp/InMemoryRsvpRepository";
+import { prisma } from "../../src/lib/prisma.js";
+import * as EventRepo from "../../src/events/PrismaEventRepository";
 import type { Event } from "../../src/events/Event";
 
 function makeEvent(overrides: Partial<Event> = {}): Event {
@@ -32,8 +32,8 @@ async function loginAs(email: string, agent: request.SuperAgentTest): Promise<vo
 
 describe("Event lifecycle integration", () => {
   beforeEach(async () => {
-    EventRepo._clearForTesting();
-    RsvpRepo._clearForTesting();
+    await prisma.rsvp.deleteMany();
+    await prisma.event.deleteMany();
 
     await EventRepo.save(makeEvent({ id: "event-draft-1", status: "draft" }));
     await EventRepo.save(makeEvent({ id: "event-published-1", status: "published" }));
@@ -42,6 +42,12 @@ describe("Event lifecycle integration", () => {
       organizerId: "user-admin",
       status: "published",
     }));
+  });
+
+  afterAll(async () => {
+    await prisma.rsvp.deleteMany();
+    await prisma.event.deleteMany();
+    await prisma.$disconnect();
   });
 
   it("publishes a draft event inline for the organizer", async () => {
