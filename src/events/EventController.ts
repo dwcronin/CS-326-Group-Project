@@ -120,9 +120,6 @@ class EventController implements IEventController {
     return 500;
   }
 
-  private isHtmxRequest(res: Response): boolean {
-    return res.req.get("HX-Request") === "true";
-  }
   private mapAttendeeListErrorStatus(error: EventAttendeeListError): number {
     if (error.name === "EventNotFoundError") return 404;
     if (error.name === "NotAuthorisedError") return 403;
@@ -355,148 +352,102 @@ class EventController implements IEventController {
 
 
   async updateEventFromForm(
-  res: Response,
-  eventId: string,
-  body: Record<string, string>,
-  session: IAppBrowserSession,
-  _store: AppSessionStore,
-  isHtmx: boolean = false,
-): Promise<void> {
-  const user = session.authenticatedUser;
+    res: Response,
+    eventId: string,
+    body: Record<string, string>,
+    session: IAppBrowserSession,
+    _store: AppSessionStore,
+    isHtmx: boolean = false,
+  ): Promise<void> {
+    const user = session.authenticatedUser;
 
-  if (!user) {
-    res.redirect("/login");
-    return;
-  }
+    if (!user) {
+      res.redirect("/login");
+      return;
+    }
 
-  if (user.role === "user") {
-    res.status(403).render("partials/error", {
-      message: "You do not have permission to edit events.",
-      layout: false,
-    });
-    return;
-  }
+    if (user.role === "user") {
+      res.status(403).render("partials/error", {
+        message: "You do not have permission to edit events.",
+        layout: false,
+      });
+      return;
+    }
 
-  const fields: EventUpdateFields = {};
+    const fields: EventUpdateFields = {};
 
-  if (body.title !== undefined) fields.title = body.title;
-  if (body.description !== undefined) fields.description = body.description;
-  if (body.location !== undefined) fields.location = body.location;
-  if (body.category !== undefined) fields.category = body.category;
+    if (body.title !== undefined) fields.title = body.title;
+    if (body.description !== undefined) fields.description = body.description;
+    if (body.location !== undefined) fields.location = body.location;
+    if (body.category !== undefined) fields.category = body.category;
 
-  if (body.startDatetime !== undefined) {
-    fields.startDatetime = new Date(body.startDatetime);
-  }
-  if (body.endDatetime !== undefined) {
-    fields.endDatetime = new Date(body.endDatetime);
-  }
-  if (body.capacity !== undefined && body.capacity.trim() !== "") {
-    fields.capacity = parseInt(body.capacity, 10);
-  }
+    if (body.startDatetime !== undefined) {
+      fields.startDatetime = new Date(body.startDatetime);
+    }
+    if (body.endDatetime !== undefined) {
+      fields.endDatetime = new Date(body.endDatetime);
+    }
+    if (body.capacity !== undefined && body.capacity.trim() !== "") {
+      fields.capacity = parseInt(body.capacity, 10);
+    }
 
-  const result = await this.service.updateEvent(
-    user.userId,
-    user.role,
-    eventId,
-    fields,
-  );
+    const result = await this.service.updateEvent(
+      user.userId,
+      user.role,
+      eventId,
+      fields,
+    );
 
-  if (result.ok === false) {
-    const error = this.toEditError(result);
-
-    const isValidationError =
-      error.name === "InvalidTitleError"       ||
-      error.name === "InvalidDescriptionError" ||
-      error.name === "InvalidDateError"        ||
-      error.name === "InvalidCapacityError";
-
-<<<<<<< HEAD
-    if (!result.ok) {
+    if (result.ok === false) {
       const error = this.toEditError(result);
+
       const isValidationError =
         error.name === "InvalidTitleError" ||
         error.name === "InvalidDescriptionError" ||
         error.name === "InvalidDateError" ||
         error.name === "InvalidCapacityError";
- 
+
       if (isValidationError) {
         const eventResult = await this.service.getEventForEdit(
           user.userId,
           user.role,
           eventId,
         );
- 
-        if (!eventResult.ok) {
-          const eventError = this.toEditError(eventResult);
-          res.status(this.mapEditErrorStatus(eventError)).render("partials/error", {
-            message: eventError.message,
+
+        if (eventResult.ok === false) {
+          const fetchError = this.toEditError(eventResult);
+          res.status(this.mapEditErrorStatus(fetchError)).render("partials/error", {
+            message: fetchError.message,
             layout: false,
           });
           return;
         }
- 
+
         res.status(422).render("events/edit", {
           event: eventResult.value,
           errors: [error.message],
           fields: body,
           lifecycleError: null,
           session,
+          layout: isHtmx ? false : undefined,
         });
         return;
       }
- 
+
       res.status(this.mapEditErrorStatus(error)).render("partials/error", {
         message: error.message,
         layout: false,
       });
       return;
     }
- 
-    res.redirect(`/events/${result.value.id}/edit`);
-=======
-    if (isValidationError) {
-      const eventResult = await this.service.getEventForEdit(
-        user.userId,
-        user.role,
-        eventId,
-      );
 
-      if (eventResult.ok === false) {
-        const fetchError = this.toEditError(eventResult);
-        res.status(this.mapEditErrorStatus(fetchError)).render("partials/error", {
-          message: fetchError.message,
-          layout: false,
-        });
-        return;
-      }
-
-      res.status(422).render("events/edit", {
-        event:  eventResult.value,
-        errors: [error.message],
-        fields: body,
-        session,
-        layout: isHtmx ? false : undefined,
-      });
-      return;
+    if (isHtmx) {
+      res.set("HX-Redirect", `/events/${result.value.id}`);
+      res.status(200).end();
+    } else {
+      res.redirect(`/events/${result.value.id}`);
     }
-
-    // Non-validation errors go to the error partial
-    res.status(this.mapEditErrorStatus(error)).render("partials/error", {
-      message: error.message,
-      layout: false,
-    });
-    return;
->>>>>>> origin/dev
   }
-
-  // Success
-  if (isHtmx) {
-    res.set("HX-Redirect", `/events/${result.value.id}`);
-    res.status(200).end();
-  } else {
-    res.redirect(`/events/${result.value.id}`);
-  }
-}
 
   async publishEventFromForm(
     res: Response,

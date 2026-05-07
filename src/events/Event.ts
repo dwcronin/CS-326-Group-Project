@@ -71,7 +71,7 @@ export interface EventAttendeeSummary {
   email: string;
   displayName: string;
   rsvpId: string;
-  rsvpStatus: "going" | "waitlisted";
+  rsvpStatus: "going" | "waitlisted" | "cancelled";
   rsvpCreatedAt: Date;
 }
 

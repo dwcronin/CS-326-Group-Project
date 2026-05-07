@@ -1,7 +1,13 @@
 // src/events/PrismaEventRepository.ts
 
 import { prisma } from "../lib/prisma.js";
-import type { Event, EventUpdateFields } from "./Event.js";
+import { DEMO_USERS } from "../auth/InMemoryUserRepository.js";
+import type {
+  Event,
+  EventAttendeeSummary,
+  EventStatus,
+  EventUpdateFields,
+} from "./Event.js";
 import type { EventRepository } from "./EventRepository.js";
 
 
@@ -98,6 +104,47 @@ export async function update(
     // Prisma throws if the record doesn't exist
     return null;
   }
+}
+
+export async function updateStatus(
+  id: string,
+  status: EventStatus,
+): Promise<Event | null> {
+  try {
+    const row = await prisma.event.update({
+      where: { id },
+      data: { status },
+    });
+    return toEvent(row);
+  } catch {
+    return null;
+  }
+}
+
+export async function listAttendees(eventId: string): Promise<EventAttendeeSummary[]> {
+  const rows = await prisma.rsvp.findMany({
+    where: {
+      eventId,
+      status: { in: ["going", "waitlisted", "cancelled"] },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
+  return rows
+    .map((rsvp) => {
+      const user = DEMO_USERS.find((candidate) => candidate.id === rsvp.userId);
+      if (!user) return null;
+
+      return {
+        userId: user.id,
+        email: user.email,
+        displayName: user.displayName,
+        rsvpId: rsvp.id,
+        rsvpStatus: rsvp.status as EventAttendeeSummary["rsvpStatus"],
+        rsvpCreatedAt: rsvp.createdAt,
+      };
+    })
+    .filter((attendee): attendee is EventAttendeeSummary => attendee !== null);
 }
 
 export async function findAll(): Promise<Event[]> {
