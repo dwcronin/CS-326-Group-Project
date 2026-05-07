@@ -16,6 +16,23 @@
 
   <div x-show="open" x-transition>
 
+    <% if (attendees.length > 0) { %>
+      <div class="mb-4 grid gap-3 sm:grid-cols-3">
+        <div class="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
+          <p class="text-xs font-medium uppercase tracking-wide text-green-700">Going</p>
+          <p class="mt-1 text-2xl font-semibold text-green-800"><%= attendees.filter(a => a.rsvpStatus === 'going').length %></p>
+        </div>
+        <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+          <p class="text-xs font-medium uppercase tracking-wide text-amber-700">Waitlisted</p>
+          <p class="mt-1 text-2xl font-semibold text-amber-800"><%= attendees.filter(a => a.rsvpStatus === 'waitlisted').length %></p>
+        </div>
+        <div class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+          <p class="text-xs font-medium uppercase tracking-wide text-gray-600">Cancelled</p>
+          <p class="mt-1 text-2xl font-semibold text-gray-800"><%= attendees.filter(a => a.rsvpStatus === 'cancelled').length %></p>
+        </div>
+      </div>
+    <% } %>
+
     <% if (attendees.length === 0) { %>
       <div class="rounded-md border border-gray-200 bg-white px-4 py-6 text-sm text-gray-600">
         No active attendees yet.
