@@ -4,8 +4,6 @@ import { prisma } from "../lib/prisma.js";
 import type { Rsvp, RsvpStatus } from "./Rsvp.js";
 import type { RsvpRepository } from "./RsvpRepository.js";
 
-
-
 function toRsvp(row: {
   id: string;
   eventId: string;
@@ -20,6 +18,14 @@ function toRsvp(row: {
     status:    row.status as RsvpStatus,
     createdAt: row.createdAt,
   };
+}
+
+export async function listByEventId(eventId: string): Promise<Rsvp[]> {
+  const rows = await prisma.rsvp.findMany({
+    where: { eventId },
+    orderBy: { createdAt: "asc" },
+  });
+  return rows.map(toRsvp);
 }
 
 export async function findByEventAndUser(
@@ -41,6 +47,7 @@ export async function listByEventId(eventId: string): Promise<Rsvp[]> {
 }
 
 export async function findActiveByEvent(eventId: string): Promise<Rsvp[]> {
+  // Only return going/waitlisted RSVPs — cancelled ones are excluded from attendee lists
   const rows = await prisma.rsvp.findMany({
     where: {
       eventId,
@@ -63,6 +70,7 @@ export async function save(rsvp: Rsvp): Promise<Rsvp> {
     },
     update: {
       status: rsvp.status,
+      // createdAt is intentionally not updated — preserve original RSVP time
     },
   });
   return toRsvp(row);

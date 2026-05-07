@@ -1,11 +1,10 @@
-<section id="attendee-list-panel" class="mt-8">
-  <h2 class="text-lg font-medium text-gray-900 mb-4">Attendees</h2>
-
+<section id="attendee-list-panel">
   <% if (attendees.length === 0) { %>
     <div class="rounded-md border border-gray-200 bg-white px-4 py-6 text-sm text-gray-600">
       No active attendees yet.
     </div>
   <% } else { %>
+<<<<<<< HEAD
     <%
       const going      = attendees.filter(a => a.rsvpStatus === 'going');
       const waitlisted = attendees.filter(a => a.rsvpStatus === 'waitlisted');
@@ -22,11 +21,29 @@
       <div class="overflow-x-auto rounded-lg border border-gray-200 bg-white mb-6">
         <table class="min-w-full divide-y divide-gray-200 text-sm">
           <thead class="bg-gray-50">
+=======
+    <div class="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+      <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-3 text-left font-medium text-gray-700">Name</th>
+            <th class="px-4 py-3 text-left font-medium text-gray-700">Email</th>
+            <th class="px-4 py-3 text-left font-medium text-gray-700">Status</th>
+            <th class="px-4 py-3 text-left font-medium text-gray-700">Joined</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% attendees.forEach((attendee) => { %>
+>>>>>>> dev
             <tr>
-              <th class="px-4 py-3 text-left font-medium text-gray-700">Name</th>
-              <th class="px-4 py-3 text-left font-medium text-gray-700">Email</th>
-              <th class="px-4 py-3 text-left font-medium text-gray-700">RSVPed at</th>
+              <td class="px-4 py-3 text-gray-900"><%= attendee.displayName %></td>
+              <td class="px-4 py-3 text-gray-700"><%= attendee.email %></td>
+              <td class="px-4 py-3 text-gray-700"><%= attendee.rsvpStatus %></td>
+              <td class="px-4 py-3 text-gray-700">
+                <%= attendee.rsvpCreatedAt.toLocaleString("en-US") %>
+              </td>
             </tr>
+<<<<<<< HEAD
           </thead>
           <tbody class="divide-y divide-gray-100">
             <% going.forEach(function(a) { %>
@@ -98,5 +115,11 @@
         </table>
       </div>
     <% } %>
+=======
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+>>>>>>> dev
   <% } %>
 </section>

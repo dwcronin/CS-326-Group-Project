@@ -17,7 +17,7 @@ import * as RsvpRepo from "./rsvp/PrismaRsvpRepository.js";
 import { RsvpService } from "./rsvp/RsvpService.js";
 import { CreateRsvpController } from "./rsvp/RsvpController.js";
 
-import * as SaveRepo from "./save/InMemorySaveRepository.js";
+import * as SaveRepo from "./save/PrismaSaveRepository.js";
 import { SaveService } from "./save/SaveService.js";
 import { CreateSaveController } from "./save/SaveController.js";
 
@@ -36,15 +36,17 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   const adminUserService = CreateAdminUserService(authUsers, passwordHasher);
   const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
 
-  // Event feature wiring
-  const eventService = new EventService(EventRepo);
-  const eventController = CreateEventController(eventService);
+  
 
   // RSVP feature wiring
   // RsvpService takes both repos — it needs EventRepo to check event status
   // and capacity, and RsvpRepo to read and write RSVPs.
   const rsvpService = new RsvpService(RsvpRepo, EventRepo);
   const rsvpController = CreateRsvpController(rsvpService);
+
+  // Event feature wiring
+  const eventService = new EventService(EventRepo);
+  const eventController = CreateEventController(eventService, rsvpService);
 
   const saveService = new SaveService(SaveRepo, EventRepo);
   const saveController = CreateSaveController(saveService);

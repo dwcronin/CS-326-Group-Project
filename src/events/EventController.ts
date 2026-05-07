@@ -6,6 +6,7 @@ import type {
   AppSessionStore,
 } from "../session/AppSession.js";
 import type { EventService } from "./EventService";
+import type { RsvpService } from "../rsvp/RsvpService.js";
 import type {
   Event,
   CreateEventInput,
@@ -27,6 +28,13 @@ export interface IEventController {
   createEventFromForm(
     res: Response,
     body: Record<string, string>,
+    session: IAppBrowserSession,
+    store: AppSessionStore,
+  ): Promise<void>;
+
+  showEventDetail(
+    res: Response,
+    eventId: string,
     session: IAppBrowserSession,
     store: AppSessionStore,
   ): Promise<void>;
@@ -71,8 +79,11 @@ export interface IEventController {
 }
 
 class EventController implements IEventController {
-  constructor(private readonly service: EventService) {}
- 
+  constructor(
+    private readonly service: EventService,
+    private readonly rsvpService: RsvpService,
+  ) {}
+
   private isHtmxRequest(res: Response): boolean {
     return res.req.get("HX-Request") === "true";
   }
@@ -125,10 +136,7 @@ class EventController implements IEventController {
     if (error.name === "NotAuthorisedError") return 403;
     return 500;
   }
- /**
-   * Renders the attendee list — returns a layout-less HTMX fragment
-   * for inline requests, or the full attendees page for direct navigation.
-   */
+
   private renderAttendeeList(
     res: Response,
     eventId: string,
@@ -144,13 +152,14 @@ class EventController implements IEventController {
       });
       return;
     }
+
     res.render("events/attendees", {
       attendees,
       eventId,
       session,
     });
   }
- 
+
   private renderLifecyclePanel(
     res: Response,
     event: Event,
@@ -304,6 +313,46 @@ class EventController implements IEventController {
     res.redirect(`/events/${createdEvent.id}/edit`);
   }
 
+  async showEventDetail(
+    res: Response,
+    eventId: string,
+    session: IAppBrowserSession,
+    _store: AppSessionStore,
+  ): Promise<void> {
+    const user = session.authenticatedUser;
+    if (!user) {
+      res.redirect("/login");
+      return;
+    }
+
+    const result = await this.service.getEventDetails(
+      user.userId,
+      user.role,
+      eventId,
+    );
+
+    if (result.ok === false) {
+      const error = this.toEditError(result);
+      res.status(this.mapEditErrorStatus(error)).render("partials/error", {
+        message: error.message,
+        layout: false,
+      });
+      return;
+    }
+
+    // Only members can RSVP — get their current status for the button
+    // Admins and staff don't see the RSVP button at all
+    const rsvpStatus = user.role === "user"
+      ? await this.rsvpService.getRsvpStatus(user.userId, eventId)
+      : null;
+
+    res.render("events/detail", {
+      event:      result.value,
+      rsvpStatus,
+      session,
+    });
+  }
+
   async showEditForm(
     res: Response,
     eventId: string,
@@ -349,7 +398,6 @@ class EventController implements IEventController {
       session,
     });
   }
-
 
   async updateEventFromForm(
     res: Response,
@@ -520,7 +568,7 @@ class EventController implements IEventController {
           user.role,
           eventId,
         );
- 
+
         if (!currentEventResult.ok) {
           const error = this.toEditError(currentEventResult);
           res.status(this.mapEditErrorStatus(error)).render("partials/error", {
@@ -529,7 +577,7 @@ class EventController implements IEventController {
           });
           return;
         }
- 
+
         res.status(422);
         this.renderLifecyclePanel(
           res,
@@ -539,7 +587,7 @@ class EventController implements IEventController {
         );
         return;
       }
- 
+
       res.status(422).render("partials/error", {
         message: "Invalid status transition.",
         layout: false,
@@ -556,33 +604,38 @@ class EventController implements IEventController {
 
     if (!result.ok) {
       const error = this.toStatusError(result);
- 
+
       if (this.isHtmxRequest(res) && error.name !== "EventNotFoundError") {
         const currentEventResult = await this.service.getEventForEdit(
           user.userId,
           user.role,
           eventId,
         );
- 
+
         if (currentEventResult.ok) {
           res.status(this.mapStatusErrorStatus(error));
-          this.renderLifecyclePanel(res, currentEventResult.value, session, error.message);
+          this.renderLifecyclePanel(
+            res,
+            currentEventResult.value,
+            session,
+            error.message,
+          );
           return;
         }
       }
- 
+
       res.status(this.mapStatusErrorStatus(error)).render("partials/error", {
         message: error.message,
         layout: false,
       });
       return;
     }
- 
+
     if (this.isHtmxRequest(res)) {
       this.renderLifecyclePanel(res, result.value, session);
       return;
     }
- 
+
     res.redirect(`/events/${eventId}/edit`);
   }
 
@@ -627,7 +680,16 @@ class EventController implements IEventController {
   }
 }
 
+<<<<<<< HEAD
 export function CreateEventController(service: EventService): IEventController {
   return new EventController(service);
 }
  
+=======
+export function CreateEventController(
+  service: EventService,
+  rsvpService: RsvpService,
+): IEventController {
+  return new EventController(service, rsvpService);
+}
+>>>>>>> dev
