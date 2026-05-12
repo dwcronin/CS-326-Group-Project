@@ -282,9 +282,15 @@ export class EventService {
 
     const attendees = await this.repo.listAttendees(eventId);
 
+    const statusRank: Record<EventAttendeeSummary["rsvpStatus"], number> = {
+      going: 0,
+      waitlisted: 1,
+      cancelled: 2,
+    };
+
     const sorted = [...attendees].sort((a, b) => {
       if (a.rsvpStatus !== b.rsvpStatus) {
-        return a.rsvpStatus === "going" ? -1 : 1;
+        return statusRank[a.rsvpStatus] - statusRank[b.rsvpStatus];
       }
       return a.rsvpCreatedAt.getTime() - b.rsvpCreatedAt.getTime();
     });
