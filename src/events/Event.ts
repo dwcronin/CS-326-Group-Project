@@ -27,6 +27,10 @@ export interface Event {
   updatedAt: Date;
 }
 
+/**
+ * Input for creating a new event.
+ * Organizer identity comes from the controller/session, not from the form.
+ */
 export interface CreateEventInput {
   title: string;
   description: string;
@@ -37,6 +41,11 @@ export interface CreateEventInput {
   capacity?: number;
 }
 
+/**
+ * The fields an organizer is allowed to change when editing.
+ * All fields are optional — only the ones provided will be updated.
+ * id, organizerId, status, createdAt are NOT editable through this type.
+ */
 export interface EventUpdateFields {
   title?: string;
   description?: string;
@@ -71,7 +80,7 @@ export interface EventAttendeeSummary {
   email: string;
   displayName: string;
   rsvpId: string;
-  rsvpStatus: "going" | "waitlisted";
+  rsvpStatus: "going" | "waitlisted" | "cancelled";
   rsvpCreatedAt: Date;
 }
 
