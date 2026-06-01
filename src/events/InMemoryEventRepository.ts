@@ -92,7 +92,11 @@ class InMemoryEventRepository implements EventRepository {
   async listAttendees(id: string): Promise<EventAttendeeSummary[]> {
     const rsvps = await RsvpRepo.listByEventId(id);
     return rsvps
-      .filter((rsvp) => rsvp.status === "going" || rsvp.status === "waitlisted")
+      .filter((rsvp) =>
+        rsvp.status === "going" ||
+        rsvp.status === "waitlisted" ||
+        rsvp.status === "cancelled"
+      )
       .map((rsvp) => {
         const user = DEMO_USERS.find((candidate) => candidate.id === rsvp.userId);
         if (!user) return null;

@@ -164,6 +164,30 @@ export class EventService {
     return Ok(event);
   }
 
+    async getEventDetails(
+    actingUserId: string,
+    actingUserRole: "admin" | "staff" | "user",
+    eventId: string
+  ): Promise<Result<Event, EventEditError>> {
+    const event = await this.repo.findById(eventId);
+
+    if (!event) {
+      return Err({ name: "EventNotFoundError", message: "Event not found." } as const);
+    }
+
+    const isAdmin = actingUserRole === "admin";
+    const isOrganizer = event.organizerId === actingUserId;
+
+    if (event.status === "draft" && !isAdmin && !isOrganizer) {
+      return Err({
+        name: "EventNotFoundError",
+        message: "Event not found.",
+      } as const);
+    }
+
+    return Ok(event);
+  }
+
   private validateFields(fields: EventUpdateFields): EventEditError | null {
     if (fields.title !== undefined) {
       const t = fields.title.trim();
@@ -258,9 +282,15 @@ export class EventService {
 
     const attendees = await this.repo.listAttendees(eventId);
 
+    const statusRank: Record<EventAttendeeSummary["rsvpStatus"], number> = {
+      going: 0,
+      waitlisted: 1,
+      cancelled: 2,
+    };
+
     const sorted = [...attendees].sort((a, b) => {
       if (a.rsvpStatus !== b.rsvpStatus) {
-        return a.rsvpStatus === "going" ? -1 : 1;
+        return statusRank[a.rsvpStatus] - statusRank[b.rsvpStatus];
       }
       return a.rsvpCreatedAt.getTime() - b.rsvpCreatedAt.getTime();
     });

@@ -209,7 +209,7 @@ describe("EventService", () => {
   });
 
   describe("listEventAttendees", () => {
-    it("returns attendees sorted with going before waitlisted", async () => {
+    it("returns attendees grouped by status and sorted by RSVP time", async () => {
       await RsvpRepo.save(
         makeRsvp({
           id: "rsvp-going",
@@ -221,6 +221,15 @@ describe("EventService", () => {
       );
       await RsvpRepo.save(
         makeRsvp({
+          id: "rsvp-going-earlier",
+          eventId: "event-1",
+          userId: "user-staff",
+          status: "going",
+          createdAt: new Date("2026-04-01T17:00:00.000Z"),
+        }),
+      );
+      await RsvpRepo.save(
+        makeRsvp({
           id: "rsvp-waitlisted",
           eventId: "event-1",
           userId: "user-admin",
@@ -228,15 +237,33 @@ describe("EventService", () => {
           createdAt: new Date("2026-04-01T17:00:00.000Z"),
         }),
       );
+      await RsvpRepo.save(
+        makeRsvp({
+          id: "rsvp-cancelled",
+          eventId: "event-1",
+          userId: "user-reader",
+          status: "cancelled",
+          createdAt: new Date("2026-03-30T17:00:00.000Z"),
+        }),
+      );
 
       const result = await service.listEventAttendees("organizer-1", "staff", "event-1");
 
       expect(result.ok).toBe(true);
       if (result.ok) {
-        expect(result.value).toHaveLength(2);
-        expect(result.value[0].rsvpStatus).toBe("going");
-        expect(result.value[1].rsvpStatus).toBe("waitlisted");
+        expect(result.value.map((attendee) => attendee.rsvpId)).toEqual([
+          "rsvp-going-earlier",
+          "rsvp-going",
+          "rsvp-waitlisted",
+          "rsvp-cancelled",
+        ]);
       }
+    });
+
+    it("allows an admin to request attendees for any event", async () => {
+      const result = await service.listEventAttendees("user-admin", "admin", "event-1");
+
+      expect(result.ok).toBe(true);
     });
 
     it("returns NotAuthorisedError when a non-organizer staff member requests attendees", async () => {
