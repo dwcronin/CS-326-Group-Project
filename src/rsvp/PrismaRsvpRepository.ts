@@ -38,6 +38,14 @@ export async function findByEventAndUser(
   return row ? toRsvp(row) : null;
 }
 
+export async function listByEventId(eventId: string): Promise<Rsvp[]> {
+  const rows = await prisma.rsvp.findMany({
+    where: { eventId },
+    orderBy: { createdAt: "asc" },
+  });
+  return rows.map(toRsvp);
+}
+
 export async function findActiveByEvent(eventId: string): Promise<Rsvp[]> {
   // Only return going/waitlisted RSVPs — cancelled ones are excluded from attendee lists
   const rows = await prisma.rsvp.findMany({
